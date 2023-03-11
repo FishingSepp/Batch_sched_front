@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import './App.css';
 import createIcon from './create-icon.png';
 import refreshIcon from './refresh-icon.png';
@@ -8,23 +7,25 @@ import deleteIcon from './delete-icon.png';
 import Modal from "react-modal";
 import CreateJobModal from "./CreateJobModal";
 import EditJobModal from "./EditJobModal";
-import axios from "axios";
+
 
 
 
 function App() {
-  const [jobs, setJobs] = useState([]);
-
-  useEffect(() => {
-    axios.get("http://localhost:8080/jobs")
-      .then((response) => {
-        setJobs(response.data);
-        console.log(response.data); // log the jobs array
-      })
-      .catch((error) => {
-        console.error("Error fetching jobs:", error);
-      });
-  }, []);
+  const [jobs, setJobs] = useState([
+    { id: "133gd1", name: "Job test1", status: "Running" },
+    { id: "2ge45", name: "Job bfgt2", status: "Completed" },
+    { id: "3t54a", name: "lukas 3g", status: "Failed" },
+    { id: "ger5e45", name: "marc f4", status: "Running" },
+    { id: "f434", name: "timo 35", status: "Completed" },
+    { id: "3f43", name: "benni 46", status: "Failed" },
+    { id: "j876", name: "emil f7", status: "Running" },
+    { id: "k987r5", name: "alex h328", status: "Completed" },
+    { id: "gh5", name: "christoph 2149", status: "Failed" },
+    { id: "14g545z", name: "Jesus 69", status: "Running" },
+    { id: "45334gf", name: "Beutlin 11", status: "Completed" },
+    { id: "grsw5", name: "Hobbingen 12", status: "Failed" },
+  ]);
 
   const MAX_JOBS_DISPLAYED = 10; // maximum number of jobs to display
 
