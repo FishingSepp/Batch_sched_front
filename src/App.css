@@ -1,26 +1,12 @@
+
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
   background-color: #282c34;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+  font-size: 1.5rem;
   color: white;
 }
 
@@ -28,11 +14,271 @@
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.App-container {
+  width: 1200px;
+  background-color: #2c313a;
+  padding: 0.5rem 2rem 2rem 2rem;
+}
+
+.App-header {
+  width: 1200px;
+  background-color: #2c313a;;
+  font-size: 1.5rem;
+  padding: 0 2rem;
+  margin-top: 3rem;
+}
+
+.options {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.App-options {
+  margin: 0 1rem 1rem 1rem;
+}
+
+.App-search {
+  margin: 0 1.5rem 0 0;
+}
+
+.App-search-container {
+  display: flex;
+  justify-content: space-between;
+  width: 35%;
+  margin: 0 0 1rem 0;
+}
+
+.App-search input[type="text"] {
+  padding: 0.5rem 2rem 0.5rem 0.5rem;
+  background-image: url("search-icon.png");
+  background-position: right center;
+  background-repeat: no-repeat;
+  background-size: 1.5rem;
+}
+
+.App-search:nth-child(1) input[type="text"] {
+  background-color: #f5f5f5;
+}
+
+.App-search:nth-child(2) input[type="text"] {
+  background-color: #fafafa;
+}
+
+.App-search input[type="text"]::placeholder {
+  color: #333;
+}
+
+.filters select {
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.jobs {
+  display: flex;
+  justify-content: space-between;
+}
+
+.jobs ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jobs li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.jobs input[type='checkbox'] {
+  margin-right: 1rem;
+}
+
+.btn-container{
+  display: block;
+  overflow: auto;
+  margin: 0 0 1rem 0;
+}
+
+.create-btn {
+  display: flex;
+  align-items: center; /* align items vertically */
+  justify-content: center; /* align items horizontally */
+  padding: 0.5rem 0.5rem;
+  border-radius: 3px;
+  border: none;
+  background-color: #fff;
+  color: #000;
+  cursor: pointer;
+  margin-left: auto;
+  float: right;
+}
+
+.create-icon {
+  height: 1.5rem;
+  margin-right: 0.5rem;
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center; /* align items vertically */
+  justify-content: center; /* align items horizontally */
+  padding: 0.5rem 0.5rem;
+  border-radius: 3px;
+  border: none;
+  background-color: #fff;
+  color: #000;
+  cursor: pointer;
+  margin-left: auto;
+  float: left;
+}
+
+.refresh-icon {
+  height: 1.5rem;
+  margin-right: 0.5rem;
+}
+
+.create-btn:hover, .refresh-btn:hover {
+  background-color: #ddd;
+}
+
+.App-list {
+  width: 1200px;
+  height: 450px;
+  overflow-y: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  background-color: #2c313a;
+}
+
+.table-body {
+  font-size: 1rem;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid #ccc;
+}
+
+.table-head th:first-child,
+.table-body td:first-child {
+  width: 10%;
+}
+
+.table-head th:nth-child(2),
+.table-body td:nth-child(2) {
+  width: 10%;
+}
+
+.table-head th:nth-child(3),
+.table-body td:nth-child(3) {
+  width: 15%;
+}
+
+.table-head th:nth-child(4),
+.table-body td:nth-child(4) {
+  width: 15%;
+}
+
+.table-head th:nth-child(5),
+.table-body td:nth-child(5) {
+  width: 20%;
+}
+
+.table-head th:nth-child(6),
+.table-body td:nth-child(6) {
+  width: 20%;
+}
+
+.table-head th:nth-child(7),
+.table-body td:nth-child(7) {
+  width: 5%;
+}
+
+.actions {
+  text-align: right;
+}
+
+.edit-btn img, .delete-btn img {
+  width:15px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.edit-btn, .delete-btn {
+  border: none;
+  border-radius: 3px;
+  margin: 0 0.2rem;
+  text-align: center;
+  padding: 0.1rem 0.1rem;
+}
+
+.App-footer {
+  margin: 3rem 0rem
+}
+
+.App-status {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.App-status .status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.App-status .status-filter {
+  display: flex;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 3px;
+  cursor: pointer;
+  box-sizing: border-box;
+  padding: 0;
+  width: auto;
+  margin-right: 0.5rem;
+}
+
+.App-status .status-filter:hover {
+  background-color: #e5e5e5;
+}
+
+.App-status .status-filter label {
+  margin: 0.5rem 0.5rem 0.5rem 0.3rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.status-filter input {
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+.status-filters {
+  color: #000;
+  margin: 0.3rem 0 0.5rem 0;
+}
+
+.status-label-container {
+  display: flex;
 }
