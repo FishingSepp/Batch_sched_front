@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import './App.css';
 import createIcon from './create-icon.png';
 import refreshIcon from './refresh-icon.png';
@@ -7,27 +7,27 @@ import deleteIcon from './delete-icon.png';
 import Modal from "react-modal";
 import CreateJobModal from "./CreateJobModal";
 import EditJobModal from "./EditJobModal";
+import cron from 'cron';
+import cronstrue from 'cronstrue';
+import cronParser from 'cron-parser';
 
 
-
+const { CronJob } = cron;
 
 function App() {
-  const [jobs, setJobs] = useState([
-    { id: "133gd1", name: "Job test1", status: "Running" },
-    { id: "2ge45", name: "Job bfgt2", status: "Completed" },
-    { id: "3t54a", name: "lukas 3g", status: "Failed" },
-    { id: "ger5e45", name: "marc f4", status: "Running" },
-    { id: "f434", name: "timo 35", status: "Completed" },
-    { id: "3f43", name: "benni 46", status: "Failed" },
-    { id: "j876", name: "emil f7", status: "Running" },
-    { id: "k987r5", name: "alex h328", status: "Completed" },
-    { id: "gh5", name: "christoph 2149", status: "Failed" },
-    { id: "14g545z", name: "Jesus 69", status: "Running" },
-    { id: "45334gf", name: "Beutlin 11", status: "Completed" },
-    { id: "grsw5", name: "Hobbingen 12", status: "Failed" },
-  ]);
+  const [jobs, setJobs] = useState([]);
+  const [jobId, setJobId] = useState(null);
 
-  const MAX_JOBS_DISPLAYED = 10; // maximum number of jobs to display
+
+  useEffect(() => {
+    fetch("http://localhost:8080/job")
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        setJobs(data);
+      })
+      .catch((error) => console.error("Error fetching jobs:", error));
+  }, []);
 
   const [searchTermName, setSearchTermName] = useState("");
   const [searchTermId, setSearchTermId] = useState("");
@@ -35,6 +35,9 @@ function App() {
   const [displayedJobs, setDisplayedJobs] = useState([]);
   const [createIsOpen, setCreateIsOpen] = useState(false);
   const [editIsOpen, setEditIsOpen] = useState(false);
+  const [repeatInterval, setRepeatInterval] = useState("");
+  const [repeatUnit, setRepeatUnit] = useState("");
+
 
   function handleStatusFilter(event) {
     const value = event.target.value;
@@ -51,6 +54,22 @@ function App() {
     }
   }
 
+  function calculateRunTimes(job) {
+    const { start_date, cronExpression } = job;
+  
+    const lastRun = cronParser
+      .parseExpression(cronExpression)
+      .prev()
+      .toISOString();
+  
+    const nextRun = cronParser
+      .parseExpression(cronExpression)
+      .next()
+      .toISOString();
+  
+    return { lastRun, nextRun };
+  }
+
   const handleSearchName = (event) => {
     const value = event.target.value;
     setSearchTermName(value);
@@ -63,7 +82,7 @@ function App() {
     const filteredJobs = jobs.filter((job) =>
       job.name.toLowerCase().startsWith(value.toLowerCase())
     );
-    setDisplayedJobs(filteredJobs.slice(0, MAX_JOBS_DISPLAYED));
+    setDisplayedJobs(filteredJobs);
   };
   
 
@@ -72,21 +91,18 @@ function App() {
     setSearchTermId(value);
     setSearchTermName("");
     setStatusFilter("All");
-    if (value === "") {
-      setDisplayedJobs([]);
-    } else {
-      const filteredJobs = jobs.filter((job) => 
-        job.id.startsWith(value));
-      setDisplayedJobs(filteredJobs.slice(0, MAX_JOBS_DISPLAYED));
-    }
   };  
 
   const handleRefresh = () => {
-    // Add code to refresh the job list here
-  };
+  fetch("http://localhost:8080/job")
+    .then((response) => response.json())
+    .then((data) => {
+      setJobs(data);
+    })
+    .catch((error) => console.error("Error fetching jobs:", error));
+};
 
   const handleCreate = () => {
-    // Add code to open the create job window here
     setCreateIsOpen(true);
   };
 
@@ -94,17 +110,47 @@ function App() {
     setCreateIsOpen(false);
   };
 
-  function handleEdit(id) {
-    // Logic for handling edit
+  function handleEdit(jobId) {
     setEditIsOpen(true);
+    setJobId(jobId);
   }
-
+  
   const closeEdit = () => {
     setEditIsOpen(false);
   };
   
   function handleDelete(id) {
     // Logic for handling delete
+  }
+  
+  useEffect(() => {
+    if (!createIsOpen && !editIsOpen) {
+      fetch("http://localhost:8080/job")
+        .then((response) => response.json())
+        .then((data) => {
+          setJobs(data);
+        })
+        .catch((error) => console.error("Error fetching jobs:", error));
+    }
+  }, [createIsOpen, editIsOpen]);
+  
+
+  function handleDelete(jobId) {
+    const url = `http://localhost:8080/job/${jobId}`;
+    fetch(url, { method: 'DELETE' })
+      .then(response => {
+        if (response.ok) {
+          fetch("http://localhost:8080/job")
+          .then((response) => response.json())
+          .then((data) => {
+            setJobs(data);
+          })
+          .catch((error) => console.error("Error fetching jobs:", error));
+        } else {
+          console.error(`Error deleting job with id ${jobId}: ${response.statusText}`);
+        }
+      })
+      .catch(error => console.error(`Error deleting job with id ${jobId}: ${error}`));
   }
   
 
@@ -200,35 +246,41 @@ function App() {
                   if (searchTermName) {
                     return job.name.toLowerCase().includes(searchTermName.toLowerCase());
                   } else if (searchTermId) {
-                    return job.id.toString().includes(searchTermId);
+                    return job.job_id.toString().includes(searchTermId);
                   } else {
                     return true;
                   }
                 })
-                .map((job) => (
-                  <tr key={job.id}>
-                    <td><input type="checkbox" /></td>
-                    <td>{job.id}</td>
-                    <td>{job.name}</td>
-                    <td>{job.status}</td>
-                    <td>{job.lastRun}</td>           
-                    <td>{job.nextRun}</td>
-                    <td className="actions">
-                      <button className="edit-btn" onClick={() => handleEdit(job.id)}>
-                        <img src={editIcon} alt="edit icon" className="edit-icon" />
-                      </button>
-                      <button className="delete-btn" onClick={() => handleDelete(job.id)}>
-                        <img src={deleteIcon} alt="delete icon" className="delete-icon" />
-                      </button>
-                    </td>
-                  </tr>
-              ))}
+                .map((job) => {
+                  const { lastRun, nextRun } = calculateRunTimes(job);
+                  return (
+                    <React.Fragment key={job.job_id}>
+                      <tr>
+                        <td><input type="checkbox" /></td>
+                        <td>{job.job_id}</td>
+                        <td>{job.name}</td>
+                        <td>{job.status ? 'Enabled' : 'Disabled'}</td>
+                        <td>{lastRun ? new Date(lastRun).toLocaleString() : 'N/A'}</td>
+                        <td>{nextRun ? new Date(nextRun).toLocaleString() : 'N/A'}</td>
+                        <td className="actions">
+                        <button className="edit-btn" onClick={() => handleEdit(job.job_id)}>  
+                          <img src={editIcon} alt="edit icon" className="edit-icon" />
+                        </button>
+                          <button className="delete-btn" onClick={() => handleDelete(job.job_id)}>
+                            <img src={deleteIcon} alt="delete icon" className="delete-icon" />
+                          </button>
+                        </td>
+                      </tr>
+                    </React.Fragment>
+                  );
+                })}
             </tbody>
+
           </table>
         </div>
 
         <CreateJobModal isOpen={createIsOpen} closeModal={closeCreate} />
-        <EditJobModal isOpen={editIsOpen} closeModal={closeEdit} />
+        <EditJobModal isOpen={editIsOpen} closeModal={closeEdit} jobId={jobId} />
 
       </div>
       <div className="App-footer">

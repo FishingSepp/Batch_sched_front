@@ -97,6 +97,17 @@
     font-size: 14px;
     color: #ccc;
   }  
+
+  .cron-expression-container {
+    margin-top: 10px;
+    text-align: left;
+    font-size: 14px;
+    color: #ccc;
+  }
+
+  .date-picker {
+    width: 55%;
+  }
   
   .footer-button-container button {
     background-color: white;

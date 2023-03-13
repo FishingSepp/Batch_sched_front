@@ -6,7 +6,7 @@
     transform: translate(-50%, -50%) !important;
     max-width: 1000px;
   }
-  
+
 
   h1 {
     margin-top: 0;
@@ -67,6 +67,10 @@
     color: #fff;
   }
 
+.date-picker {
+  width: 55%;
+}
+
   #jobDescription {
     width: 80%;
     padding: 5px;
@@ -97,6 +101,13 @@
     font-size: 14px;
     color: #ccc;
   }  
+
+  .cron-expression-container {
+    margin-top: 10px;
+    text-align: left;
+    font-size: 14px;
+    color: #ccc;
+  }
   
   .footer-button-container button {
     background-color: white;
@@ -110,3 +121,5 @@
   .footer-button-container button:first-child {
     margin-left: 0;
   }
+
+  
