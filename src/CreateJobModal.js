@@ -3,6 +3,8 @@ import Modal from "react-modal";
 import './CreateJobModal.css';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import cronParser from 'cron-parser';
+import cronstrue from 'cronstrue';
 
 const CreateJobModal = ({isOpen, closeModal}) => {
     const [jobName, setJobName] = useState("");
@@ -10,9 +12,16 @@ const CreateJobModal = ({isOpen, closeModal}) => {
     const [periodBegin, setPeriodBegin] = useState(null);
     const [periodEnd, setPeriodEnd] = useState(null);
     const [enabled, setEnabled] = useState(true);
-    const [repeatInterval, setRepeatInterval] = useState("0");
-    const [repeatUnit, setRepeatUnit] = useState("minute(s)");
     const [cronExpression, setCronExpression] = useState("");
+    const [seconds, setSeconds] = useState("");
+    const [minutes, setMinutes] = useState("");
+    const [hours, setHours] = useState("");
+    const [dayOfMonth, setDayOfMonth] = useState("");
+    const [month, setMonth] = useState("");
+    const [dayOfWeek, setDayOfWeek] = useState("");
+    const [humanReadable, setHumanReadable] = useState('');
+    const [isValid, setIsValid] = useState(false);
+    const [isValidCron, setIsValidCron] = useState(false);
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -22,7 +31,7 @@ const CreateJobModal = ({isOpen, closeModal}) => {
             start_date: periodBegin,
             end_date: periodEnd,
             status: enabled,
-            cronExpression: cronExpression
+            cronExpression: `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`
         };
         fetch("http://localhost:8080/job", {
             method: "POST",
@@ -39,75 +48,89 @@ const CreateJobModal = ({isOpen, closeModal}) => {
             .catch((error) => console.error("Error creating job:", error));
     };
 
-    const summary = () => {
-        let summaryText = `Start on ${
-        periodBegin
-            ? periodBegin.toLocaleDateString()
-            : ""}`;
-        if (periodBegin) {
-            if (repeatInterval > 0) {
-                if (periodEnd) {
-                    summaryText += ` until ${periodEnd.toLocaleDateString()}`;
-                }
-                summaryText += ` and repeat every ${repeatInterval} ${repeatUnit}`;
-            } else {
-                summaryText += ` and execute once`;
+    const clearInputFields = () => {
+        setJobName("");
+        setJobDescription("");
+        setPeriodBegin(null);
+        setPeriodEnd(null);
+        setEnabled(true);
+        setCronExpression("");
+        setSeconds("");
+        setMinutes("");
+        setHours("");
+        setDayOfMonth("");
+        setMonth("");
+        setDayOfWeek("");
+    };
+
+    function generateCronExpression() {
+        if (seconds !== "" && minutes !== "" && hours !== "" && dayOfMonth !== "" && month !== "" && dayOfWeek !== "") {
+            try {
+                const cronString = `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`;
+                cronParser.parseExpression(cronString);
+                return cronString;
+            } catch (err) {
+              setHumanReadable("Invalid cron expression");
+              return ("Invalid inputs")
             }
         }
-        if (!periodBegin) {
-            summaryText = "Please select a Period Begin."
-        }
-        return summaryText;
     }
 
-    // Parse the repeat interval and unit into a cron expression
     useEffect(() => {
-        const newCronExpression = getCronExpression(repeatInterval, repeatUnit);
-        setCronExpression(newCronExpression);
-    }, [repeatInterval, repeatUnit]);
-
-    function getCronExpression(repeatInterval, repeatUnit) {
-        switch (repeatUnit) {
-            case "minute(s)":
-                if (repeatInterval === "0") {
-                    return "* * * * *";
-                } else {
-                    return `*/${repeatInterval} * * * *`;
-                }
-            case "hour(s)":
-                if (repeatInterval === "0") {
-                    return "0 * * * *";
-                } else {
-                    return `0 */${repeatInterval} * * *`;
-                }
-            case "day(s)":
-                if (repeatInterval === "0") {
-                    return "0 0 * * *";
-                } else {
-                    return `0 0 */${repeatInterval} * *`;
-                }
-            case "week(s)":
-                if (repeatInterval === "0") {
-                    return "0 0 * * 0";
-                } else {
-                    return `0 0 * * 0#${repeatInterval}`;
-                }
-            case "month(s)":
-                if (repeatInterval === "0") {
-                    return "0 0 1 * *";
-                } else {
-                    return `0 0 1 */${repeatInterval} *`;
-                }
-            case "year(s)":
-                if (repeatInterval === "0") {
-                    return "0 0 1 1 *";
-                } else {
-                    return `0 0 1 1 */${repeatInterval}`;
-                }
-            default:
-                return "";
+        try {
+          const parts = cronExpression.trim().split(/\s+/);
+          if (parts.length === 6) {
+            setSeconds(parts[0]);
+            setMinutes(parts[1]);
+            setHours(parts[2]);
+            setDayOfMonth(parts[3]);
+            setMonth(parts[4]);
+            setDayOfWeek(parts[5]);
+            cronstrue.toString(cronExpression);
+            setHumanReadable('"' + cronstrue.toString(cronExpression) + '"');
+          }
+          else {
+            setHumanReadable("Invalid cron expression");
+          }
+        } catch (err) {
+            setHumanReadable('Invalid cron expression');
         }
-    }
+    }, [cronExpression]);
+
+    useEffect(() => {
+      setIsValidCron(humanReadable !== "Invalid cron expression");
+    }, [humanReadable]);
+
+    useEffect(() => {
+        const isValid = (
+            jobName !== "" && jobDescription !== "" && periodBegin !== null && seconds !== "" && minutes !== "" && hours !== "" && dayOfMonth !== "" && month !== "" && dayOfWeek !== "" && generateCronExpression() !== 'Invalid cron expression'
+        );
+        console.log(isValid)
+        setIsValid(isValid);
+    }, [
+        jobName,
+        jobDescription,
+        periodBegin,
+        seconds,
+        minutes,
+        hours,
+        dayOfMonth,
+        month,
+        dayOfWeek
+    ]);
+
+    // Generate the cron expression whenever the input fields change
+    useEffect(() => {
+        const newCronExpression = generateCronExpression();
+        setCronExpression(newCronExpression);
+    }, [
+        seconds,
+        minutes,
+        hours,
+        dayOfMonth,
+        month,
+        dayOfWeek
+    ]);
 
     return (
         <Modal
@@ -152,76 +175,147 @@ const CreateJobModal = ({isOpen, closeModal}) => {
                                 // Number of visible lines
                             />
                         </div>
+                        <div className="date-picker-container">
+                            <label htmlFor="periodBegin">Period Begin:</label>
+                            <DatePicker className="date-picker" selected={periodBegin} onChange={(date) => setPeriodBegin(date)} showTimeInput="showTimeInput" timeInputLabel="Time:" dateFormat="MMMM d, yyyy HH:mm" minDate={new Date(Date.now() + 60 * 60 * 1000)}
+                                // only allow dates one hour in the future
+                            />
+                            <br/>
+                            <label htmlFor="periodEnd">Period End:</label>
+                            <DatePicker
+                                className="date-picker"
+                                selected={periodEnd}
+                                onChange={(date) => setPeriodEnd(date)}
+                                showTimeInput="showTimeInput"
+                                timeInputLabel="Time:"
+                                dateFormat="MMMM d, yyyy HH:mm"
+                                minDate={periodBegin}/>
+                        </div>
 
                     </div>
                 </div>
 
                 <div className="detail-job-info">
-                <div className="date-picker-container">
-                    <label htmlFor="periodBegin">Period Begin:</label>
-                    <DatePicker
-                        className="date-picker"
-                        selected={periodBegin}
-                        onChange={(date) => setPeriodBegin(date)}
-                        showTimeInput
-                        timeInputLabel="Time:"
-                        dateFormat="MMMM d, yyyy HH:mm"
-                        minDate={new Date(Date.now() + 60 * 60 * 1000)} // only allow dates one hour in the future
-                    />
-                    <br/>
-                    <label htmlFor="periodEnd">Period End:</label>
-                    <DatePicker
-                        className="date-picker"
-                        selected={periodEnd}
-                        onChange={(date) => setPeriodEnd(date)}
-                        showTimeInput
-                        timeInputLabel="Time:"
-                        dateFormat="MMMM d, yyyy HH:mm"
-                        minDate={periodBegin} 
-                    />
-                    </div>
 
                     <div className="repeat-container">
-                        <label htmlFor="repeatInterval">Repeat every:</label>
-                        <input
-                            type="number"
-                            id="repeatInterval"
-                            value={repeatInterval}
-                            onChange={(e) => {
-                                const value = parseInt(e.target.value);
-                                if (!isNaN(value) && value >= 0) {
-                                    setRepeatInterval(value.toString());
-                                }
-                            }}/>
-                        <select
-                            id="repeatUnit"
-                            value={repeatUnit}
-                            onChange={(e) => setRepeatUnit(e.target.value)}>
-                            <option value="minute(s)">minute(s)</option>
-                            <option value="hour(s)">hour(s)</option>
-                            <option value="day(s)">day(s)</option>
-                            <option value="month(s)">Month(s)</option>
-                            <option value="year(s)">Year(s)</option>
-                        </select>
-                        <div className="summary-container">
-                            {summary()}
+                        <div className="small-time-container">
+                            <label htmlFor="seconds">Seconds:</label>
+                            <div className="cron-input-container">
+                                <input
+                                    type="text"
+                                    id="seconds"
+                                    value={seconds}
+                                    onChange={(e) => setSeconds(e.target.value)}
+                                    placeholder="*"/>
+                            </div>
+                            <label htmlFor="minutes">Minutes:</label>
+                            <div className="cron-input-container">
+                                <input
+                                    type="text"
+                                    id="minutes"
+                                    value={minutes}
+                                    onChange={(e) => setMinutes(e.target.value)}
+                                    placeholder="*"/>
+                            </div>
+                            <label htmlFor="hours">Hours:</label>
+                            <div className="cron-input-container">
+                                <input
+                                    type="text"
+                                    id="hours"
+                                    value={hours}
+                                    onChange={(e) => setHours(e.target.value)}
+                                    placeholder="*"/>
+                            </div>
+                        </div>
+                        <div className="big-time-container">
+                            <label htmlFor="dayOfMonth">Day of Month:</label>
+                            <div className="cron-input-container">
+                                <input
+                                    type="text"
+                                    id="dayOfMonth"
+                                    value={dayOfMonth}
+                                    onChange={(e) => setDayOfMonth(e.target.value)}
+                                    placeholder="*"/>
+                            </div>
+                            <label htmlFor="month">Month:</label>
+                            <div className="cron-input-container">
+                                <input
+                                    type="text"
+                                    id="month"
+                                    value={month}
+                                    onChange={(e) => setMonth(e.target.value)}
+                                    placeholder="*"/>
+                            </div>
+                            <label htmlFor="dayOfWeek">Day of Week:</label>
+                            <div className="cron-input-container">
+                                <input
+                                    type="text"
+                                    id="dayOfWeek"
+                                    value={dayOfWeek}
+                                    onChange={(e) => setDayOfWeek(e.target.value)}
+                                    placeholder="*"/>
+                            </div>
                         </div>
                         <div className="cron-expression-container">
-                            Cron expression: {cronExpression}
+                            {
+                                humanReadable === "Invalid cron expression"
+                                    ? (
+                                        <span>
+                                            <span
+                                                style={{
+                                                    color: '#ccc'
+                                                }}>Cron Expression:
+                                            </span>
+                                            <input
+                                              type="text"
+                                              id="cronExpression"
+                                              value={cronExpression ? cronExpression : ""}
+                                              onChange={(e) => setCronExpression(e.target.value)}
+                                          />
+                                        </span>
+                                    )
+                                    : (
+                                        <span>
+                                            <span
+                                                style={{
+                                                    color: '#ccc'
+                                                }}>Cron Expression:
+                                            </span>
+                                            <input
+                                              type="text"
+                                              id="cronExpression"
+                                              value={cronExpression ? cronExpression : ""}
+                                              onChange={(e) => setCronExpression(e.target.value)}
+                                          />
+                                        </span>
+                                    )
+                            }
+                        </div>
+                        <div className="human-readable-container" style={{ color: humanReadable === 'Invalid cron expression' ? 'red' : '#ccc' }}>
+                          {humanReadable}
                         </div>
                     </div>
                 </div>
-
                 <br/>
-                <div className="footer-button-container">
-                    <button type="submit"
-                        //code for creating job
-                    >Create</button>
-                    <button type="button" onClick={closeModal}>
-                        Cancel
-                    </button>
-                </div>
             </form>
+            <div className="footer-button-container">
+            <button
+                type="submit"
+                disabled={!isValid || !isValidCron}
+                style={{ backgroundColor: (isValid && isValidCron) ? "white" : "#999" }}
+                onClick={handleSubmit}
+                >Create
+            </button>
+
+                <button
+                    type="button"
+                    onClick={() => {
+                        closeModal();
+                        clearInputFields();
+                    }}>
+                    Cancel
+                </button>
+            </div>
         </Modal>
     );
 };

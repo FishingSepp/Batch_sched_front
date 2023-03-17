@@ -35,8 +35,6 @@ function App() {
   const [displayedJobs, setDisplayedJobs] = useState([]);
   const [createIsOpen, setCreateIsOpen] = useState(false);
   const [editIsOpen, setEditIsOpen] = useState(false);
-  const [repeatInterval, setRepeatInterval] = useState("");
-  const [repeatUnit, setRepeatUnit] = useState("");
 
 
   function handleStatusFilter(event) {
@@ -119,10 +117,6 @@ function App() {
     setEditIsOpen(false);
   };
   
-  function handleDelete(id) {
-    // Logic for handling delete
-  }
-  
   useEffect(() => {
     if (!createIsOpen && !editIsOpen) {
       fetch("http://localhost:8080/job")
@@ -200,15 +194,21 @@ function App() {
                 </div>
               </div>
               <div className="status-filter">
-                <div className="status-label-container" onClick={() => setStatusFilter("Running")}>
-                  <input type="checkbox" id="running" value="Running" checked={statusFilter === "Running"} onChange={() => {}} />
-                  <label htmlFor="running">Running</label>
+                <div className="status-label-container" onClick={() => setStatusFilter("Enabled")}>
+                  <input type="checkbox" id="enabled" value="Enabled" checked={statusFilter === "Enabled"} onChange={() => {}} />
+                  <label htmlFor="enabled">Enabled</label>
                 </div>
               </div>
               <div className="status-filter">
-                <div className="status-label-container" onClick={() => setStatusFilter("Completed")}>
-                  <input type="checkbox" id="completed" value="Completed" checked={statusFilter === "Completed"} onChange={() => {}} />
-                  <label htmlFor="completed">Completed</label>
+                <div className="status-label-container" onClick={() => setStatusFilter("Disabled")}>
+                  <input type="checkbox" id="disabled" value="Disabled" checked={statusFilter === "Disabled"} onChange={() => {}} />
+                  <label htmlFor="disabled">Disabled</label>
+                </div>
+              </div>
+              <div className="status-filter">
+                <div className="status-label-container" onClick={() => setStatusFilter("Succeeded")}>
+                  <input type="checkbox" id="succeeded" value="Succeeded" checked={statusFilter === "Succeeded"} onChange={() => {}} />
+                  <label htmlFor="succeeded">Succeeded</label>
                 </div>
               </div>
               <div className="status-filter">
