@@ -1,0 +1,188 @@
+
+.ReactModal__Content {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    max-width: 1000px;
+    height: 60% !important;
+  }
+  
+
+  h1 {
+    margin-top: 0;
+    margin-bottom: 3rem;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    width: 90%;
+    height: 75%;
+  }
+  
+  .info-container .input-container {
+    width: 48%;
+    height: 80%;
+    padding-right: 2%;
+  }
+  
+  .info-container {
+    width: 30%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .history-container {
+    width: 55%;
+    height: 100%;
+    padding-left: 5%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow-y: scroll;
+  }
+
+  .history-body {
+    height: 200px;
+    overflow-y: scroll;
+  }  
+
+  .history-body img {
+    height: 15px;
+    width: 15px;
+    display: inline-block;
+  }
+
+  .output-td {
+    max-height: 2.5em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 210px;
+    cursor: pointer;
+  }
+  
+  .output-expanded pre {
+    max-width: 450px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+  }
+
+  .modal-header h1{
+    margin: 1rem 0 2rem 0;
+  }
+
+  .modal-header {
+    margin-top: -5%;
+  }
+  
+  .modal-header button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-right: -10px;
+  }
+  
+  
+  
+  .info-container label {
+    margin-bottom: 10px;
+  }
+
+  .info-container .input-row {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+  
+  
+  .info-container input[type="text"],
+  .info-container select {
+    padding: 5px;
+    margin-bottom: 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    background-color: #444;
+    color: #fff;
+  }
+
+  .info-container .big-time-container, .info-container .small-time-container {
+    display: inline-block;
+  }
+
+  .info-container .human-readable-container {
+    margin: 0;
+    font-size: 14px;
+    color: #ccc;
+    width: 75%;
+  }
+
+  .info-container #jobDescription {
+    width: 90%;
+    padding: 5px;
+    margin-bottom: 0;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    background-color: #444;
+    color: #fff;
+    resize: none;
+  }
+  
+  .info-container button[type="submit"],
+  .info-container button[type="button"] {
+    padding: 10px 20px;
+    margin-top: 0;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    background-color: #fff;
+    color: #222;
+    cursor: pointer;
+  }
+  
+  .info-container .summary-container {
+    margin-top: 10px;
+    text-align: left;
+    font-size: 14px;
+    color: #ccc;
+  }  
+
+  .info-container .cron-expression-container {
+    margin-top: 0px;
+    text-align: left;
+    font-size: 14px;
+    color: #ccc;
+  }
+  
+  .info-container button {
+    background-color: white;
+    color: #2c313a;
+    border: none;
+    margin-left: 15px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  
+  .info-container button:first-child {
+    margin-left: 0;
+  }
+
+  .info-container div span {
+    background-color: #444;
+    display: inline-block;
+    width: 90%;
+    border-radius: 5px;
+    padding: 5px;
+    overflow: auto;
+    margin-bottom: 10px;
+  }

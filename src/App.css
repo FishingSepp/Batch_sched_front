@@ -183,11 +183,12 @@ th, td {
 .table-head th:first-child,
 .table-body td:first-child {
   width: 10%;
+  padding-left: 1%;
 }
 
 .table-head th:nth-child(2),
 .table-body td:nth-child(2) {
-  width: 10%;
+  width: 15%;
 }
 
 .table-head th:nth-child(3),
@@ -197,7 +198,7 @@ th, td {
 
 .table-head th:nth-child(4),
 .table-body td:nth-child(4) {
-  width: 15%;
+  width: 20%;
 }
 
 .table-head th:nth-child(5),
@@ -207,30 +208,48 @@ th, td {
 
 .table-head th:nth-child(6),
 .table-body td:nth-child(6) {
-  width: 20%;
-}
-
-.table-head th:nth-child(7),
-.table-body td:nth-child(7) {
   width: 5%;
 }
 
-.actions {
-  text-align: right;
+.refresh-icon-rotate {
+  transform: rotate(180deg);
+  transition: transform 0.5s;
 }
 
-.edit-btn img, .delete-btn img {
-  width:15px;
+.last-run-date {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.status-img {
   vertical-align: middle;
+  width: 15px;
+  height: 15px;
+  filter: invert(1);
+}
+
+.status-text {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.button-container {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.edit-btn img, .delete-btn img, .info-btn img {
+  width:15px;
   display: inline-block;
 }
 
-.edit-btn, .delete-btn {
+.edit-btn, .delete-btn, .info-btn {
   border: none;
   border-radius: 3px;
   margin: 0 0.2rem;
   text-align: center;
   padding: 0.1rem 0.1rem;
+  display: flex;
 }
 
 .App-footer {

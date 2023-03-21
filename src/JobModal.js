@@ -1,12 +1,14 @@
 import React, {useState, useEffect} from "react";
 import Modal from "react-modal";
-import './CreateJobModal.css';
+import './JobModal.css';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import cronParser from 'cron-parser';
 import cronstrue from 'cronstrue';
+import {MdClose} from 'react-icons/md';
 
-const CreateJobModal = ({isOpen, closeModal}) => {
+const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
+    const [job, setJob] = useState({});
     const [jobName, setJobName] = useState("");
     const [jobDescription, setJobDescription] = useState("");
     const [periodBegin, setPeriodBegin] = useState(null);
@@ -23,8 +25,25 @@ const CreateJobModal = ({isOpen, closeModal}) => {
     const [isValid, setIsValid] = useState(false);
     const [isValidCron, setIsValidCron] = useState(false);
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
+
+    const clearInputFields = () => {
+        setJobName("");
+        setJobDescription("");
+        setPeriodBegin(null);
+        setPeriodEnd(null);
+        setEnabled(true);
+        setCronExpression("");
+        setSeconds("");
+        setMinutes("");
+        setHours("");
+        setDayOfMonth("");
+        setMonth("");
+        setDayOfWeek("");
+    };
+
+    const handleSubmit = (event, isEditing) => {
+        if (!isEditing) {
+            event.preventDefault();
         const jobData = {
             name: jobName,
             description: jobDescription,
@@ -46,35 +65,73 @@ const CreateJobModal = ({isOpen, closeModal}) => {
                 closeModal();
             })
             .catch((error) => console.error("Error creating job:", error));
-    };
-
-    const clearInputFields = () => {
-        setJobName("");
-        setJobDescription("");
-        setPeriodBegin(null);
-        setPeriodEnd(null);
-        setEnabled(true);
-        setCronExpression("");
-        setSeconds("");
-        setMinutes("");
-        setHours("");
-        setDayOfMonth("");
-        setMonth("");
-        setDayOfWeek("");
-    };
-
-    function generateCronExpression() {
-        if (seconds !== "" && minutes !== "" && hours !== "" && dayOfMonth !== "" && month !== "" && dayOfWeek !== "") {
-            try {
-                const cronString = `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`;
-                cronParser.parseExpression(cronString);
-                return cronString;
-            } catch (err) {
-              setHumanReadable("Invalid cron expression");
-              return ("Invalid inputs")
-            }
         }
-    }
+
+        if (isEditing) {
+            event.preventDefault();
+        const jobData = {
+            name: jobName,
+            description: jobDescription,
+            start_date: periodBegin,
+            end_date: periodEnd,
+            status: enabled,
+            cronExpression: `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`
+        };
+        fetch(`http://localhost:8080/job/${jobId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(jobData)
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                console.log(data);
+                closeModal();
+            })
+            .catch((error) => console.error("Error creating job:", error));
+        }
+        
+    };
+
+    useEffect(() => {
+        if (jobId && isEditing) {
+            fetch(`http://localhost:8080/job/${jobId}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    setJob(data);
+                    console.log(data);
+                    setJobName(data.name);
+                    setJobDescription(data.description);
+                    setPeriodBegin(
+                        data.start_date
+                            ? new Date(Date.parse(data.start_date))
+                            : null
+                    );
+                    setPeriodEnd(
+                        data.end_date
+                            ? new Date(Date.parse(data.end_date))
+                            : null
+                    );
+                    
+                    setEnabled(data.status);
+                    setCronExpression(data.cronExpression)
+
+                    const [seconds, minutes, hours, dayOfMonth, month, dayOfWeek] = splitCronExpression(data.cronExpression);
+                    setSeconds(seconds);
+                    setMinutes(minutes);
+                    setHours(hours);
+                    setDayOfMonth(dayOfMonth);
+                    setMonth(month);
+                    setDayOfWeek(dayOfWeek);
+                })
+                .catch((error) => console.error("Error fetching job:", error));
+        }
+        if (!isEditing) {
+            clearInputFields()
+        }
+    }, [jobId, isEditing]);
+
 
     useEffect(() => {
         try {
@@ -97,15 +154,11 @@ const CreateJobModal = ({isOpen, closeModal}) => {
         }
     }, [cronExpression]);
 
-    useEffect(() => {
-      setIsValidCron(humanReadable !== "Invalid cron expression");
-    }, [humanReadable]);
 
     useEffect(() => {
         const isValid = (
             jobName !== "" && jobDescription !== "" && periodBegin !== null && seconds !== "" && minutes !== "" && hours !== "" && dayOfMonth !== "" && month !== "" && dayOfWeek !== "" && generateCronExpression() !== 'Invalid cron expression'
         );
-        console.log(isValid)
         setIsValid(isValid);
     }, [
         jobName,
@@ -119,6 +172,11 @@ const CreateJobModal = ({isOpen, closeModal}) => {
         dayOfWeek
     ]);
 
+    useEffect(() => {
+        setIsValidCron(humanReadable !== "Invalid cron expression");
+      }, [humanReadable]);
+
+
     // Generate the cron expression whenever the input fields change
     useEffect(() => {
         const newCronExpression = generateCronExpression();
@@ -131,12 +189,30 @@ const CreateJobModal = ({isOpen, closeModal}) => {
         month,
         dayOfWeek
     ]);
+    function splitCronExpression(cronExpression) {
+        const [seconds, minutes, hours, dayOfMonth, month, dayOfWeek] = cronExpression.split(' ');
+        return [seconds, minutes, hours, dayOfMonth, month, dayOfWeek];
+      }
+      
+
+      function generateCronExpression() {
+        if (seconds !== "" && minutes !== "" && hours !== "" && dayOfMonth !== "" && month !== "" && dayOfWeek !== "") {
+            try {
+                const cronString = `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`;
+                cronParser.parseExpression(cronString);
+                return cronString;
+            } catch (err) {
+              setHumanReadable("Invalid cron expression");
+              return ("Invalid inputs")
+            }
+        }
+    }
 
     return (
         <Modal
             isOpen={isOpen}
             onRequestClose={closeModal}
-            contentLabel="Create Job Modal"
+            contentLabel="Job Modal"
             style={{
                 overlay: {
                     backgroundColor: 'rgba(44, 49, 58, 0.75)'
@@ -155,7 +231,16 @@ const CreateJobModal = ({isOpen, closeModal}) => {
                     boxShadow: '0 0 10px rgba(0, 0, 0, 0.25)'
                 }
             }}>
-            <h1>Create New Job</h1>
+            <div className="modal-header">
+                <button
+                    style={{
+                        position: "absolute",
+                        top: "2%",
+                        right: "2%"
+                    }}
+                    onClick={closeModal}><MdClose/></button>
+                <h1  style={{margin: "3rem 0 2rem 0"}}>{isEditing ? "Edit Job" : "Create New Job"}</h1>
+            </div>
             <form onSubmit={handleSubmit}>
                 <div className="input-container">
                     <div className="general-job-info">
@@ -177,8 +262,8 @@ const CreateJobModal = ({isOpen, closeModal}) => {
                         </div>
                         <div className="date-picker-container">
                             <label htmlFor="periodBegin">Period Begin:</label>
-                            <DatePicker className="date-picker" selected={periodBegin} onChange={(date) => setPeriodBegin(date)} showTimeInput="showTimeInput" timeInputLabel="Time:" dateFormat="MMMM d, yyyy HH:mm" minDate={new Date(Date.now() + 60 * 60 * 1000)}
-                                // only allow dates one hour in the future
+                            <DatePicker className="date-picker" selected={periodBegin} onChange={(date) => setPeriodBegin(date)} showTimeInput="showTimeInput" timeInputLabel="Time:" dateFormat="MMMM d, yyyy HH:mm" minDate={new Date(Date.now())}
+                                // only allow dates in the future
                             />
                             <br/>
                             <label htmlFor="periodEnd">Period End:</label>
@@ -303,21 +388,13 @@ const CreateJobModal = ({isOpen, closeModal}) => {
                     type="submit"
                     disabled={!isValid || !isValidCron}
                     style={{ backgroundColor: (isValid && isValidCron) ? "white" : "#999" }}
-                    onClick={handleSubmit}
-                    >Create
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => {
-                        closeModal();
-                        clearInputFields();
-                    }}>
-                    Cancel
+                    onClick={(event) => handleSubmit(event, isEditing)}
+                    >
+                    {isEditing ? "Edit" : "Create"}
                 </button>
             </div>
         </Modal>
     );
 };
 
-export default CreateJobModal;
+export default JobModal;
