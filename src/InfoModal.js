@@ -4,13 +4,14 @@ import './InfoModal.css';
 import "react-datepicker/dist/react-datepicker.css";
 import cronstrue from 'cronstrue';
 import {MdClose} from 'react-icons/md';
-import successIcon from './success-icon.png';
-import failIcon from './fail-icon.png';
+import successIcon from './icons/success-icon.png';
+import failIcon from './icons/fail-icon.png';
 
 const InfoModal = ({isOpen, closeModal, jobId}) => {
     const [job, setJob] = useState({});
     const [jobName, setJobName] = useState("");
     const [jobDescription, setJobDescription] = useState("");
+    const [jobScript, setJobScript] = useState("");
     const [periodBegin, setPeriodBegin] = useState(null);
     const [periodEnd, setPeriodEnd] = useState(null);
     const [enabled, setEnabled] = useState(true);
@@ -38,60 +39,67 @@ const InfoModal = ({isOpen, closeModal, jobId}) => {
 
     useEffect(() => {
         if (isOpen) {
-            setIsModalOpen(true);
-            fetchExecutions(jobId);
+          setIsModalOpen(true);
+          fetchExecutions(jobId);
         }
-    }, [isOpen, jobId]);
-
-    useEffect(() => {
+      }, [isOpen, jobId]);
+      
+      useEffect(() => {
         if (isModalOpen) {
-            fetch(`http://localhost:8080/job/${jobId}`)
-                .then((response) => response.json())
-                .then((data) => {
-                    setJob(data);
-                    console.log(data);
-                    setJobName(data.name);
-                    setJobDescription(data.description);
-                    setPeriodBegin(
-                        data.start_date
-                            ? new Date(Date.parse(data.start_date))
-                            : null
-                    );
-                    setPeriodEnd(
-                        data.end_date
-                            ? new Date(Date.parse(data.end_date))
-                            : null
-                    );
-                    setEnabled(data.status);
-                    setCronExpression(data.cronExpression);
-                    cronstrue.toString(cronExpression);
-                    setHumanReadable('"' + cronstrue.toString(cronExpression) + '"');
-
-                    // Fetch executions for the job
-                    fetch(`http://localhost:8080/execution/${jobId}`)
-                        .then(
-                            (response) => response.json()
-                        )
-                        .then((executions) => {
-                            setExecutions(executions);
-                        })
-                        .catch((error) => console.error("Error fetching executions:", error));
-                })
-                .catch((error) => console.error("Error fetching job:", error));
-        }
-    }, [isModalOpen, jobId]);
-
-    const fetchExecutions = (jobId) => {
-        fetch(`http://localhost:8080/execution/${jobId}`)
-            .then(
-                (response) => response.json()
-            )
+            //fetch job by id
+          fetch(`http://localhost:8080/job/${jobId}`)
+            .then((response) => response.json())
             .then((data) => {
-                console.log(data)
-                setExecutions(data);
+              setJob(data);
+              console.log(data);
+              setJobName(data.name);
+              setJobDescription(data.description || "");
+              setJobScript(data.job_script || "");
+              setPeriodBegin(
+                data.start_date
+                  ? new Date(Date.parse(data.start_date))
+                  : null
+              );
+              setPeriodEnd(
+                data.end_date
+                  ? new Date(Date.parse(data.end_date))
+                  : null
+              );
+              setEnabled(data.status);
+              setCronExpression(data.cronExpression);
+      
+              if (data.cronExpression) {
+                setHumanReadable('"' + cronstrue.toString(data.cronExpression) + '"');
+              } else {
+                setHumanReadable('');
+              }
+      
+              // fetch exec for job
+              fetch(`http://localhost:8080/execution/${jobId}`)
+                .then(
+                  (response) => response.json()
+                )
+                .then((executions) => {
+                  setExecutions(executions);
+                })
+                .catch((error) => console.error("Error fetching executions:", error));
             })
-            .catch((error) => console.error("Error fetching executions:", error));
-    }
+            .catch((error) => console.error("Error fetching job:", error));
+        }
+      }, [isModalOpen, jobId]);
+      
+      const fetchExecutions = (jobId) => {
+        fetch(`http://localhost:8080/execution/${jobId}`)
+          .then(
+            (response) => response.json()
+          )
+          .then((data) => {
+            console.log(data)
+            setExecutions(data);
+          })
+          .catch((error) => console.error("Error fetching executions:", error));
+      }
+      
 
     return (
         <Modal
@@ -152,6 +160,17 @@ const InfoModal = ({isOpen, closeModal, jobId}) => {
                                     : "N/A"
                             }</span>
                     </div>
+                    <div className="script-container">
+                        <label htmlFor="jobScript">Job:</label>
+                        <br/>
+                        <span id="jobScript"
+                            style={{height: "42px"}}
+                        >{
+                                jobScript
+                                    ? jobScript
+                                    : "N/A"
+                            }</span>
+                    </div>
                     <div className="date-container">
                         <label htmlFor="periodBegin">Period Begin:</label>
                         <br/>
@@ -197,6 +216,7 @@ const InfoModal = ({isOpen, closeModal, jobId}) => {
                         <tbody className="history-body">
                             {executions.length > 0 ? (
                                 executions
+                                .sort((a, b) => new Date(b.end_time) - new Date(a.end_time))
                                 .slice(0, 10)
                                 .map((execution) => (
                                     <React.Fragment key={execution.execution_id}>
@@ -208,7 +228,7 @@ const InfoModal = ({isOpen, closeModal, jobId}) => {
                                           <img src={failIcon} alt="Fail" />
                                         )}
                                       </td>
-                                      <td>{new Date(execution.start_time).toLocaleString()}</td>
+                                      <td>{new Date(execution.end_time).toLocaleString()}</td>
                                       <td>
                                         {execution.start_time && execution.end_time
                                           ? (
@@ -229,6 +249,7 @@ const InfoModal = ({isOpen, closeModal, jobId}) => {
                                       <tr>
                                         <td colSpan={4}>
                                           <div className="output-expanded">
+                                            <pre>Exit code: {execution.exit_code}</pre>
                                             <pre>{execution.output}</pre>
                                             </div>
           </td>

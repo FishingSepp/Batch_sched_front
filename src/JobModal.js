@@ -6,11 +6,13 @@ import "react-datepicker/dist/react-datepicker.css";
 import cronParser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import {MdClose} from 'react-icons/md';
+import { clear } from "@testing-library/user-event/dist/clear";
 
 const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
     const [job, setJob] = useState({});
     const [jobName, setJobName] = useState("");
     const [jobDescription, setJobDescription] = useState("");
+    const [jobScript, setJobScript] = useState("");
     const [periodBegin, setPeriodBegin] = useState(null);
     const [periodEnd, setPeriodEnd] = useState(null);
     const [enabled, setEnabled] = useState(true);
@@ -29,6 +31,7 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
     const clearInputFields = () => {
         setJobName("");
         setJobDescription("");
+        setJobScript("");
         setPeriodBegin(null);
         setPeriodEnd(null);
         setEnabled(true);
@@ -42,11 +45,13 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
     };
 
     const handleSubmit = (event, isEditing) => {
+        //when in creation mode -> post request
         if (!isEditing) {
             event.preventDefault();
         const jobData = {
             name: jobName,
             description: jobDescription,
+            job_script: jobScript,
             start_date: periodBegin,
             end_date: periodEnd,
             status: enabled,
@@ -67,11 +72,13 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
             .catch((error) => console.error("Error creating job:", error));
         }
 
+        //when in edit mode -> put request
         if (isEditing) {
             event.preventDefault();
         const jobData = {
             name: jobName,
             description: jobDescription,
+            job_script: jobScript,
             start_date: periodBegin,
             end_date: periodEnd,
             status: enabled,
@@ -102,7 +109,8 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
                     setJob(data);
                     console.log(data);
                     setJobName(data.name);
-                    setJobDescription(data.description);
+                    setJobDescription(data.description || "");
+                    setJobScript(data.job_script || "");
                     setPeriodBegin(
                         data.start_date
                             ? new Date(Date.parse(data.start_date))
@@ -154,7 +162,7 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
         }
     }, [cronExpression]);
 
-
+    //add job_script as requi for isValid later on
     useEffect(() => {
         const isValid = (
             jobName !== "" && jobDescription !== "" && periodBegin !== null && seconds !== "" && minutes !== "" && hours !== "" && dayOfMonth !== "" && month !== "" && dayOfWeek !== "" && generateCronExpression() !== 'Invalid cron expression'
@@ -177,7 +185,6 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
       }, [humanReadable]);
 
 
-    // Generate the cron expression whenever the input fields change
     useEffect(() => {
         const newCronExpression = generateCronExpression();
         setCronExpression(newCronExpression);
@@ -189,12 +196,12 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
         month,
         dayOfWeek
     ]);
+
     function splitCronExpression(cronExpression) {
         const [seconds, minutes, hours, dayOfMonth, month, dayOfWeek] = cronExpression.split(' ');
         return [seconds, minutes, hours, dayOfMonth, month, dayOfWeek];
       }
       
-
       function generateCronExpression() {
         if (seconds !== "" && minutes !== "" && hours !== "" && dayOfMonth !== "" && month !== "" && dayOfWeek !== "") {
             try {
@@ -239,31 +246,57 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
                         right: "2%"
                     }}
                     onClick={closeModal}><MdClose/></button>
-                <h1  style={{margin: "3rem 0 2rem 0"}}>{isEditing ? "Edit Job" : "Create New Job"}</h1>
+                <h1  style={{margin: "5rem 0 3rem 0"}}>{isEditing ? "Edit Job" : "Create New Job"}</h1>
             </div>
+            
             <form onSubmit={handleSubmit}>
-                <div className="input-container">
-                    <div className="general-job-info">
-                        <div className="input-row">
-                            <label htmlFor="jobName">Name:</label>
-                            <br/>
-                            <input
-                                type="text"
-                                id="jobName"
-                                value={jobName}
-                                onChange={(e) => setJobName(e.target.value)}/>
-                        </div>
-                        <div className="input-row">
-                            <label htmlFor="jobDescription">Description:</label>
-                            <br/>
-                            <textarea id="jobDescription" value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} rows="5"
-                                // Number of visible lines
-                            />
-                        </div>
+            <div className="job-script-container">
+            <div className="job-script">
+            <label htmlFor="job-script">Job:</label>
+                            <div className="job-input">
+                                <input
+                                    type="text"
+                                    id="job"
+                                    value={jobScript}
+                                    onChange={(e) => setJobScript(e.target.value)}
+                                    placeholder="Job path and script to be executed"/>
+                            </div>
+            </div>
+            <div className="space-holder"></div>
+            </div>
+            <div className="input-container">
+                <div className="general-job-info">
+                    <div className="input-row">
+                    <label htmlFor="jobName">Name:</label>
+                    <br />
+                    <input
+                        style={{ width: "55%" }}
+                        type="text"
+                        id="jobName"
+                        value={jobName}
+                        maxLength={50}
+                        onChange={(e) =>
+                        e.target.value.length <= 50 && setJobName(e.target.value)
+                        }
+                    />
+                    </div>
+                    <div className="input-row">
+                    <label htmlFor="jobDescription">Description:</label>
+                    <br />
+                    <textarea
+                        id="jobDescription"
+                        value={jobDescription}
+                        maxLength={200}
+                        onChange={(e) =>
+                        e.target.value.length <= 200 && setJobDescription(e.target.value)
+                        }
+                        rows="4"
+                    />
+                    </div>
                         <div className="date-picker-container">
                             <label htmlFor="periodBegin">Period Begin:</label>
                             <DatePicker className="date-picker" selected={periodBegin} onChange={(date) => setPeriodBegin(date)} showTimeInput="showTimeInput" timeInputLabel="Time:" dateFormat="MMMM d, yyyy HH:mm" minDate={new Date(Date.now())}
-                                // only allow dates in the future
+                                // only dates in future
                             />
                             <br/>
                             <label htmlFor="periodEnd">Period End:</label>
@@ -346,10 +379,7 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
                                 humanReadable === "Invalid cron expression"
                                     ? (
                                         <span>
-                                            <span
-                                                style={{
-                                                    color: '#ccc'
-                                                }}>Cron Expression:
+                                            <span>Cron Expression:
                                             </span>
                                             <input
                                               type="text"
@@ -361,10 +391,7 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
                                     )
                                     : (
                                         <span>
-                                            <span
-                                                style={{
-                                                    color: '#ccc'
-                                                }}>Cron Expression:
+                                            <span>Cron Expression:
                                             </span>
                                             <input
                                               type="text"
@@ -379,10 +406,12 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
                         <div className="human-readable-container" style={{ color: humanReadable === 'Invalid cron expression' ? 'red' : '#ccc' }}>
                           {humanReadable}
                         </div>
+                        
                     </div>
                 </div>
                 <br/>
             </form>
+           
             <div className="footer-button-container">
                 <button
                     type="submit"

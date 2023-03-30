@@ -1,21 +1,23 @@
 import React, {useState, useEffect} from "react";
 import './App.css';
-import createIcon from './create-icon.png';
-import refreshIcon from './refresh-icon.png';
-import infoIcon from './info-icon.png';
-import editIcon from './edit-icon.png';
-import deleteIcon from './delete-icon.png';
 import Modal from "react-modal";
 import JobModal from "./JobModal";
 import InfoModal from "./InfoModal";
 import cron from 'cron';
 import cronstrue from 'cronstrue';
 import cronParser from 'cron-parser';
-import status1Icon from './status-1.png';
-import status2Icon from './status-2.png';
-import status3Icon from './status-3.png';
-import status4Icon from './status-4.png';
-import status5Icon from './status-5.png';
+import createIcon from './icons/create-icon.png';
+import refreshIcon from './icons/refresh-icon.png';
+import infoIcon from './icons/info-icon.png';
+import editIcon from './icons/edit-icon.png';
+import deleteIcon from './icons/delete-icon.png';
+import status1Icon from './icons/status-1.png';
+import status2Icon from './icons/status-2.png';
+import status3Icon from './icons/status-3.png';
+import status4Icon from './icons/status-4.png';
+import status5Icon from './icons/status-5.png';
+import sortIcon from './icons/sort.png';
+
 
 const {CronJob} = cron;
 
@@ -33,7 +35,9 @@ function App() {
     const [isEditing, setIsEditing] = useState(false);
     const [refreshCounter, setRefreshCounter] = useState(0);
     const [rotationDegrees, setRotationDegrees] = useState(0);
+    const [sortConfig, setSortConfig] = useState({ key: 'job_id', direction: 'asc' });
 
+    // get last exec and stat of job by id
     const fetchLatestEndTimeAndStatus = async (jobId) => {
         try {
             const response = await fetch(`http://localhost:8080/execution/${jobId}`);
@@ -46,6 +50,9 @@ function App() {
                 return {lastRun: null, status: null};
             }
             const executions = await response.json();
+            if (executions.length === 0) {
+              return {lastRun: null, status: null};
+            }
             const latestEndTime = executions.reduce((latest, execution) => {
                 const endTime = new Date(execution.end_time);
                 return endTime > latest
@@ -61,14 +68,14 @@ function App() {
         }
     };
 
+    // fetch jobs again after changes
     useEffect(() => {
         const fetchJobs = async () => {
             try {
                 const response = await fetch("http://localhost:8080/job");
                 const data = await response.json();
-                console.log(data);
 
-                // Filter jobs
+                //filter all jobs
                 const filtered = data
                     .filter((job) => {
                         if (statusFilter.includes("All")) {
@@ -97,17 +104,27 @@ function App() {
                         }
                     });
 
-                // Fetch last run times
-                const withLastRunsAndStatus = await Promise.all(filtered.map(async (job) => {
-                    const {lastRun, executionStatus} = await fetchLatestEndTimeAndStatus(job.job_id);
-                    const {nextRun} = await calculateRunTimes(job);
-                    return {
-                        ...job,
-                        lastRun,
-                        nextRun,
-                        executionStatus
-                    };
-                }));
+                    const withLastRunsAndStatus = await Promise.all(
+                        filtered.map(async (job) => {
+                            const { lastRun, executionStatus } = await fetchLatestEndTimeAndStatus(
+                                job.job_id
+                            );
+                    
+                            let nextRun = null;
+                            if (job.status) {
+                                const { nextRun: calculatedNextRun } = await calculateRunTimes(job);
+                                nextRun = calculatedNextRun;
+                            }
+                    
+                            return {
+                                ...job,
+                                lastRun,
+                                nextRun,
+                                executionStatus,
+                            };
+                        })
+                    );
+                    
 
                 setFilteredJobs(withLastRunsAndStatus);
 
@@ -120,6 +137,7 @@ function App() {
         fetchJobs();
     }, [statusFilter, searchTermName, searchTermId, refreshCounter]);
 
+    // enable/disable
     const handleStatusToggle = (jobId, currentStatus) => {
       console.log("Toggling status for jobId:", jobId, "currentStatus:", currentStatus);
       const newStatus = !currentStatus;
@@ -141,15 +159,55 @@ function App() {
         .catch((error) => console.error(`Error updating status for job ${jobId}:`, error));
     };
     
+    const sortBy = (key) => {
+        let direction = 'asc';
+      
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+          direction = 'desc';
+        }
+      
+        setSortConfig({ key, direction });
+      };
 
+      const renderSortIcon = (key) => {
+        if (sortConfig.key === key) {
+          const rotation = sortConfig.direction === 'asc' ? '0deg' : '180deg';
+          return <img src={sortIcon} alt="sort" style={{width: "15px", filter: "invert(100%)", transform: `rotate(${rotation})` }} />;
+        }
+        return null;
+      };
+      
+      
+      const sortedJobs = React.useMemo(() => {
+        return filteredJobs.slice().sort((a, b) => {
+          let aValue = a[sortConfig.key];
+          let bValue = b[sortConfig.key];
+    
+          if (sortConfig.key === 'name') {
+            aValue = aValue.toLowerCase();
+            bValue = bValue.toLowerCase();
+          }
+      
+          if (aValue < bValue) {
+            return sortConfig.direction === 'asc' ? -1 : 1;
+          }
+          if (aValue > bValue) {
+            return sortConfig.direction === 'asc' ? 1 : -1;
+          }
+          return 0;
+        });
+      }, [filteredJobs, sortConfig]);      
+      
+
+    // weather indicator like in jenkins, values to be changed?
     const calculateStatus = (executions) => {
         const lastExecutions = executions.slice(-10);
-        console.log(lastExecutions)
         const successfulExecutions = lastExecutions.filter(
             (execution) => execution.success === true
         );
         const successRate = successfulExecutions.length / lastExecutions.length;
 
+        // 1 = good - 5 bad
         if (successRate >= 0.9) 
             return 1;
         if (successRate >= 0.7) 
@@ -196,20 +254,34 @@ function App() {
         setRefreshCounter((prev) => prev + 1);
     };
 
+    //run time with nextrun in fut 
     function calculateRunTimes(job) {
-        const {start_date, cronExpression} = job;
-
+        const { start_date, cronExpression } = job;
+    
         const options = {
-            currentDate: new Date(start_date)
+            currentDate: new Date(),
+            tz: "UTC",
         };
-
+    
         const nextRun = cronParser
             .parseExpression(cronExpression, options)
             .next()
-            .toISOString();
-
-        return {nextRun};
+            .toDate();
+    
+        if (nextRun >= new Date(start_date)) {
+            return { nextRun: nextRun.toISOString() };
+        } else {
+            options.currentDate = new Date(start_date);
+            const nextValidRun = cronParser
+                .parseExpression(cronExpression, options)
+                .next()
+                .toDate();
+    
+            return { nextRun: nextValidRun.toISOString() };
+        }
     }
+    
+      
 
     const handleInfo = (jobId) => {
         setInfoModalIsOpen(true);
@@ -353,17 +425,16 @@ function App() {
                     <table>
                         <thead>
                             <tr className="table-headers">
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Status</th>
-                                <th>LastRun</th>
-                                <th>NextRun</th>
-                                <th>Actions</th>
+                                <th onClick={() => sortBy('job_id')}>ID {renderSortIcon('job_id')}</th>
+                                <th onClick={() => sortBy('name')}>Name {renderSortIcon('name')}</th>
+                                <th onClick={() => sortBy('status')}>Status {renderSortIcon('status')}</th>
+                                <th onClick={() => sortBy('lastRun')}>LastRun {renderSortIcon('lastRun')}</th>
+                                <th onClick={() => sortBy('nextRun')}>NextRun {renderSortIcon('nextRun')}</th>
                             </tr>
                         </thead>
                         <tbody className="table-body">
                             {
-                                filteredJobs.map((job) => (
+                                sortedJobs.map((job) => (
                                     <React.Fragment key={job.job_id}>
                                         <tr onDoubleClick={() => handleInfo(job.job_id)}>
                                             <td>{job.job_id}</td>
@@ -398,11 +469,10 @@ function App() {
                                                             alt={`Status ${job.executionStatus}`}/>
                                                 }
                                             </td>
-                                            <td>{
-                                                    job.nextRun
-                                                        ? new Date(job.nextRun).toLocaleString()
-                                                        : "N/A"
-                                                }</td>
+                                            <td>
+                                                {job.status && job.nextRun ? new Date(job.nextRun).toLocaleString() : "N/A"}
+                                            </td>
+
                                             <td className="actions">
                                                 <div className="button-container">
                                                     <button className="info-btn" onClick={() => handleInfo(job.job_id)}>
