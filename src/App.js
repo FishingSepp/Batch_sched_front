@@ -136,6 +136,10 @@ function App() {
         };
         // add to see triggers in devtool: console.log("Dependencies changed:", { statusFilter, searchTermName, searchTermId, refreshCounter });
         fetchJobs();
+        const interval = setInterval(() => {
+            fetchJobs();
+        }, 10 * 1000); 
+        return () => clearInterval(interval);
     }, [statusFilter, searchTermName, searchTermId, refreshCounter]);
 
     // enable/disable seperated to not send complete job like in jobmodal only for status

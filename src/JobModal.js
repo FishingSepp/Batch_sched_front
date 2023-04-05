@@ -48,17 +48,17 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
 
     const handleSubmit = (event, isEditing) => {
         //when in creation mode -> post request
+        event.preventDefault();
         if (!isEditing) {
-            event.preventDefault();
-        const jobData = {
-            name: jobName,
-            description: jobDescription,
-            job_script: jobScript,
-            start_date: periodBegin,
-            end_date: periodEnd,
-            status: enabled,
-            cronExpression: `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`
-        };
+            const jobData = {
+                name: jobName,
+                description: jobDescription,
+                job_script: jobScript,
+                start_date: periodBegin,
+                end_date: periodEnd,
+                status: enabled,
+                cronExpression: `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`
+            };
         fetch("http://localhost:8080/job", {
             method: "POST",
             headers: {
@@ -76,7 +76,6 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
 
         //when in edit mode -> put request
         if (isEditing) {
-            event.preventDefault();
             const jobData = {
                 name: jobName,
                 description: jobDescription,
@@ -99,6 +98,21 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
                 closeModal();
             })
             .catch((error) => console.error("Error creating job:", error));
+
+            // delete executions of old job by id
+            const url = `http://localhost:8080/execution/job/${jobId}`;
+            fetch(url, {method: 'DELETE'})
+                .then(response => {
+                    if (response.ok) {
+                        fetch("http://localhost:8080/execution")
+                            .then((response) => response.json())
+                            .catch((error) => console.error("Error fetching jobs:", error));
+                    } else {
+                        console.error(`Error deleting executions of job with id ${jobId}: ${response.statusText}`);
+                    }
+                })
+                .catch(error => console.error(`Error deleting executions of job with id ${jobId}: ${error}`));
+            
         }
         
     };
