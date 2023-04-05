@@ -3,6 +3,7 @@ import Modal from "react-modal";
 import './JobModal.css';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import "./custom-datepicker.css";
 import cronParser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import {MdClose} from 'react-icons/md';
