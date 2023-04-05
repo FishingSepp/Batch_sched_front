@@ -6,7 +6,6 @@ import "react-datepicker/dist/react-datepicker.css";
 import cronParser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import {MdClose} from 'react-icons/md';
-import { clear } from "@testing-library/user-event/dist/clear";
 
 const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
     const [job, setJob] = useState({});
@@ -26,6 +25,7 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
     const [humanReadable, setHumanReadable] = useState('');
     const [isValid, setIsValid] = useState(false);
     const [isValidCron, setIsValidCron] = useState(false);
+    const [originalJob, setOriginalJob] = useState(null);
 
 
     const clearInputFields = () => {
@@ -43,6 +43,7 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
         setMonth("");
         setDayOfWeek("");
     };
+    
 
     const handleSubmit = (event, isEditing) => {
         //when in creation mode -> post request
@@ -75,21 +76,21 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
         //when in edit mode -> put request
         if (isEditing) {
             event.preventDefault();
-        const jobData = {
-            name: jobName,
-            description: jobDescription,
-            job_script: jobScript,
-            start_date: periodBegin,
-            end_date: periodEnd,
-            status: enabled,
-            cronExpression: `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`
-        };
-        fetch(`http://localhost:8080/job/${jobId}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(jobData)
+            const jobData = {
+                name: jobName,
+                description: jobDescription,
+                job_script: jobScript,
+                start_date: periodBegin,
+                end_date: periodEnd,
+                status: enabled,
+                cronExpression: `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`
+            };
+            fetch(`http://localhost:8080/job/${jobId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(jobData)
         })
             .then((response) => response.json())
             .then((data) => {
@@ -106,6 +107,7 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
             fetch(`http://localhost:8080/job/${jobId}`)
                 .then((response) => response.json())
                 .then((data) => {
+                    setOriginalJob(data);
                     setJob(data);
                     console.log(data);
                     setJobName(data.name);
@@ -138,8 +140,27 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
         if (!isEditing) {
             clearInputFields()
         }
-    }, [jobId, isEditing]);
+    }, [jobId, isEditing, isOpen]);
 
+    const hasChanges = () => {
+        if (!originalJob) {
+          return false;
+        }
+        // add job_script in fut
+        return (
+          originalJob.name !== jobName ||
+          originalJob.description !== jobDescription ||
+          (originalJob.start_date
+            ? new Date(Date.parse(originalJob.start_date)).toISOString() !== periodBegin?.toISOString()
+            : periodBegin) ||
+          (originalJob.end_date
+            ? new Date(Date.parse(originalJob.end_date)).toISOString() !== periodEnd?.toISOString()
+            : periodEnd) ||
+          originalJob.status !== enabled ||
+          originalJob.cronExpression !== cronExpression
+        );
+      };
+      
 
     useEffect(() => {
         try {
@@ -242,8 +263,9 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
                 <button
                     style={{
                         position: "absolute",
-                        top: "2%",
-                        right: "2%"
+                        top: "10px",
+                        right: "10px",
+                        marginRight: 0
                     }}
                     onClick={closeModal}><MdClose/></button>
                 <h1  style={{margin: "5rem 0 3rem 0"}}>{isEditing ? "Edit Job" : "Create New Job"}</h1>
@@ -415,8 +437,15 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
             <div className="footer-button-container">
                 <button
                     type="submit"
-                    disabled={!isValid || !isValidCron}
-                    style={{ backgroundColor: (isValid && isValidCron) ? "white" : "#999" }}
+                    disabled={isEditing ? (!isValid || !isValidCron || !hasChanges()) : (!isValid || !isValidCron)}
+                    style={{
+                        backgroundColor: (isEditing ? (isValid && isValidCron && hasChanges()) : (isValid && isValidCron))
+                          ? "white"
+                          : "#999",
+                        cursor: (isEditing ? (isValid && isValidCron && hasChanges()) : (isValid && isValidCron))
+                          ? "pointer"
+                          : "default",
+                      }}
                     onClick={(event) => handleSubmit(event, isEditing)}
                     >
                     {isEditing ? "Edit" : "Create"}

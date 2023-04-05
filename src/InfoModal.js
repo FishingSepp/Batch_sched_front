@@ -128,8 +128,9 @@ const InfoModal = ({isOpen, closeModal, jobId}) => {
                 <button
                     style={{
                         position: "absolute",
-                        top: "2%",
-                        right: "2%"
+                        top: "10px",
+                        right: "10px",
+                        marginRight: 0
                     }}
                     onClick={closeModal}><MdClose/></button>
                 <h1>Job Info</h1>
