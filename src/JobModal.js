@@ -27,6 +27,7 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
     const [isValid, setIsValid] = useState(false);
     const [isValidCron, setIsValidCron] = useState(false);
     const [originalJob, setOriginalJob] = useState(null);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
 
     const clearInputFields = () => {
@@ -76,6 +77,7 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
 
         //when in edit mode -> put request
         if (isEditing) {
+            setShowConfirmDialog(false);
             const jobData = {
                 name: jobName,
                 description: jobDescription,
@@ -249,6 +251,10 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
               return ("Invalid inputs")
             }
         }
+    }
+
+    function openConfirmDialog() {
+        setShowConfirmDialog(true);
     }
 
     return (
@@ -461,11 +467,34 @@ const JobModal = ({isOpen, closeModal, isEditing, jobId}) => {
                           ? "pointer"
                           : "default",
                       }}
-                    onClick={(event) => handleSubmit(event, isEditing)}
+                      onClick={(event) => {
+                        openConfirmDialog();
+                        
+                    }}
                     >
                     {isEditing ? "Edit" : "Create"}
                 </button>
             </div>
+            {
+                showConfirmDialog && (
+                    <div className="confirmation-dialog">
+
+                        <div className="confirmation-dialog-content">
+                            <button
+                                className="close-confirmation-dialog-button"
+                                style={{}}
+                                onClick={() => setShowConfirmDialog(false)}><MdClose/></button>
+                            <p>When submitting this change:</p>
+                            <p style={{margin: "0"}}>All past executions of this job will be deleted.</p>                            
+                            <div className="confirmation-dialog-buttons">
+                                <button
+                                    className="confirm-delete-button"
+                                    onClick={(event) => handleSubmit(event, isEditing)}>Edit job</button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
         </Modal>
     );
 };

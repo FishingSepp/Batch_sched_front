@@ -33,7 +33,7 @@ function App() {
     const [isEditing, setIsEditing] = useState(false);
     const [refreshCounter, setRefreshCounter] = useState(0);
     const [rotationDegrees, setRotationDegrees] = useState(0);
-    const [sortConfig, setSortConfig] = useState({ key: 'job_id', direction: 'asc' });
+    const [sortConfig, setSortConfig] = useState({key: 'job_id', direction: 'asc'});
     const [jobToDelete, setJobToDelete] = useState(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
@@ -51,7 +51,7 @@ function App() {
             }
             const executions = await response.json();
             if (executions.length === 0) {
-              return {lastRun: null, status: null};
+                return {lastRun: null, status: null};
             }
             const latestEndTime = executions.reduce((latest, execution) => {
                 const endTime = new Date(execution.end_time);
@@ -68,9 +68,8 @@ function App() {
         }
     };
 
-    // fetch jobs again after changes
-    // currently triggering 3 times when initial load..
-    // expecting error with refreshCounter but couldnt pin it down
+    // fetch jobs again after changes currently triggering 3 times when initial
+    // load.. expecting error with refreshCounter but couldnt pin it down
     useEffect(() => {
         const fetchJobs = async () => {
             try {
@@ -106,27 +105,24 @@ function App() {
                         }
                     });
 
-                    const withLastRunsAndStatus = await Promise.all(
-                        filtered.map(async (job) => {
-                            const { lastRun, executionStatus } = await fetchLatestEndTimeAndStatus(
-                                job.job_id
-                            );
-                    
-                            let nextRun = null;
-                            if (job.status) {
-                                const { nextRun: calculatedNextRun } = await calculateRunTimes(job);
-                                nextRun = calculatedNextRun;
-                            }
-                    
-                            return {
-                                ...job,
-                                lastRun,
-                                nextRun,
-                                executionStatus,
-                            };
-                        })
+                const withLastRunsAndStatus = await Promise.all(filtered.map(async (job) => {
+                    const {lastRun, executionStatus} = await fetchLatestEndTimeAndStatus(
+                        job.job_id
                     );
-                    
+
+                    let nextRun = null;
+                    if (job.status) {
+                        const {nextRun: calculatedNextRun} = await calculateRunTimes(job);
+                        nextRun = calculatedNextRun;
+                    }
+
+                    return {
+                        ...job,
+                        lastRun,
+                        nextRun,
+                        executionStatus
+                    };
+                }));
 
                 setFilteredJobs(withLastRunsAndStatus);
 
@@ -134,77 +130,101 @@ function App() {
                 console.error("Error fetching jobs:", error);
             }
         };
-        // add to see triggers in devtool: console.log("Dependencies changed:", { statusFilter, searchTermName, searchTermId, refreshCounter });
+        // add to see triggers in devtool: console.log("Dependencies changed:", {
+        // statusFilter, searchTermName, searchTermId, refreshCounter });
         fetchJobs();
         const interval = setInterval(() => {
             fetchJobs();
-        }, 10 * 1000); 
-        return () => clearInterval(interval);
+        }, 10 * 1000);
+        return() => clearInterval(interval);
     }, [statusFilter, searchTermName, searchTermId, refreshCounter]);
 
-    // enable/disable seperated to not send complete job like in jobmodal only for status
+    // enable/disable seperated to not send complete job like in jobmodal only for
+    // status
     const handleStatusToggle = (jobId, currentStatus) => {
-      console.log("Toggling status for jobId:", jobId, "currentStatus:", currentStatus);
-      const newStatus = !currentStatus;
-      fetch(`http://localhost:8080/job/${jobId}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
-        .then((response) => {
-          if (response.ok) {
-            console.log("Status updated successfully");
-            setRefreshCounter((prevCounter) => prevCounter + 1);
-          } else {
-            console.error(`Error updating status for job ${jobId}: ${response.statusText}`);
-          }
+        console.log(
+            "Toggling status for jobId:",
+            jobId,
+            "currentStatus:",
+            currentStatus
+        );
+        const newStatus = !currentStatus;
+        fetch(`http://localhost:8080/job/${jobId}/status`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({status: newStatus})
         })
-        .catch((error) => console.error(`Error updating status for job ${jobId}:`, error));
+            .then((response) => {
+                if (response.ok) {
+                    console.log("Status updated successfully");
+                    setRefreshCounter((prevCounter) => prevCounter + 1);
+                } else {
+                    console.error(`Error updating status for job ${jobId}: ${response.statusText}`);
+                }
+            })
+            .catch(
+                (error) => console.error(`Error updating status for job ${jobId}:`, error)
+            );
     };
 
-      //sort icon next to table header that dictates the sort
-      const renderSortIcon = (key) => {
+    //sort icon next to table header that dictates the sort
+    const renderSortIcon = (key) => {
         if (sortConfig.key === key) {
-          const rotation = sortConfig.direction === 'asc' ? '0deg' : '180deg';
-          return <img src={sortIcon} alt="sort" style={{width: "15px", filter: "invert(100%)", transform: `rotate(${rotation})` }} />;
+            const rotation = sortConfig.direction === 'asc'
+                ? '0deg'
+                : '180deg';
+            return <img
+                src={sortIcon}
+                alt="sort"
+                style={{
+                    width: "15px",
+                    filter: "invert(100%)",
+                    transform: `rotate(${rotation})`
+                }}/>;
         }
         return null;
-      };
-      
-    // set sort config asc or desc 
+    };
+
+    // set sort config asc or desc
     const sortBy = (key) => {
         let direction = 'asc';
-      
-        if (sortConfig.key === key && sortConfig.direction === 'asc') {
-          direction = 'desc';
-        }
-      
-        setSortConfig({ key, direction });
-      };
 
-      // sort jobs by table header + asc/desc
-      const sortedJobs = React.useMemo(() => {
-        return filteredJobs.slice().sort((a, b) => {
-          let aValue = a[sortConfig.key];
-          let bValue = b[sortConfig.key];
-    
-          if (sortConfig.key === 'name') {
-            aValue = aValue.toLowerCase();
-            bValue = bValue.toLowerCase();
-          }
-      
-          if (aValue < bValue) {
-            return sortConfig.direction === 'asc' ? -1 : 1;
-          }
-          if (aValue > bValue) {
-            return sortConfig.direction === 'asc' ? 1 : -1;
-          }
-          return 0;
-        });
-      }, [filteredJobs, sortConfig]);      
-      
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+
+        setSortConfig({key, direction});
+    };
+
+    // sort jobs by table header + asc/desc
+    const sortedJobs = React.useMemo(() => {
+        return filteredJobs
+            .slice()
+            .sort((a, b) => {
+                let aValue = a[sortConfig.key];
+                let bValue = b[sortConfig.key];
+
+                if (sortConfig.key === 'name') {
+                    aValue = aValue.toLowerCase();
+                    bValue = bValue.toLowerCase();
+                }
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc'
+                        ? -1
+                        : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc'
+                        ? 1
+                        : -1;
+                }
+                return 0;
+            });
+    }, [filteredJobs, sortConfig]);
+
     // weather indicator like in jenkins, values to be adjusted?
     const calculateStatus = (executions) => {
         const lastExecutions = executions.slice(-10);
@@ -238,7 +258,7 @@ function App() {
         setSearchTermName(value);
         setSearchTermId("");
         setStatusFilter("All");
-      };      
+    };
 
     const handleSearchId = (event) => {
         const value = event.target.value;
@@ -252,33 +272,33 @@ function App() {
         setRefreshCounter((prev) => prev + 1);
     };
 
-    //run time with nextrun in fut 
+    //run time with nextrun in fut
     function calculateRunTimes(job) {
-        const { start_date, cronExpression } = job;
-    
+        const {start_date, cronExpression} = job;
+
         const options = {
             currentDate: new Date(),
-            tz: "UTC",
+            tz: "UTC"
         };
-    
+
         const nextRun = cronParser
             .parseExpression(cronExpression, options)
             .next()
             .toDate();
-    
+
         if (nextRun >= new Date(start_date)) {
-            return { nextRun: nextRun.toISOString() };
+            return {nextRun: nextRun.toISOString()};
         } else {
             options.currentDate = new Date(start_date);
             const nextValidRun = cronParser
                 .parseExpression(cronExpression, options)
                 .next()
                 .toDate();
-    
-            return { nextRun: nextValidRun.toISOString() };
+
+            return {nextRun: nextValidRun.toISOString()};
         }
     }
-    
+
     const handleInfo = (jobId) => {
         setInfoModalIsOpen(true);
         setJobId(jobId);
@@ -310,14 +330,14 @@ function App() {
     //update job list after closing jobmodal to see edit/create result
     useEffect(() => {
         if (!JobModalIsOpen) {
-          setRefreshCounter((prev) => prev + 1);
+            setRefreshCounter((prev) => prev + 1);
         }
-      }, [JobModalIsOpen]);    
-    
+    }, [JobModalIsOpen]);
+
     function openConfirmDialog() {
-    setShowConfirmDialog(true);
+        setShowConfirmDialog(true);
     }
-      
+
     // delete job by id
     function handleDelete(jobToDelete) {
         setShowConfirmDialog(false);
@@ -341,20 +361,19 @@ function App() {
 
     useEffect(() => {
         const closeOnOutsideClick = (e) => {
-          if (e.target === document.querySelector('.confirmation-dialog')) {
-            setShowConfirmDialog(false);
-          }
+            if (e.target === document.querySelector('.confirmation-dialog')) {
+                setShowConfirmDialog(false);
+            }
         };
-      
+
         if (showConfirmDialog) {
-          window.addEventListener('click', closeOnOutsideClick);
+            window.addEventListener('click', closeOnOutsideClick);
         }
-      
-        return () => {
-          window.removeEventListener('click', closeOnOutsideClick);
+
+        return() => {
+            window.removeEventListener('click', closeOnOutsideClick);
         };
-      }, [showConfirmDialog]);
-      
+    }, [showConfirmDialog]);
 
     return (
         <div className="App">
@@ -450,7 +469,10 @@ function App() {
                                 <th onClick={() => sortBy('status')}>Status {renderSortIcon('status')}</th>
                                 <th onClick={() => sortBy('lastRun')}>LastRun {renderSortIcon('lastRun')}</th>
                                 <th onClick={() => sortBy('nextRun')}>NextRun {renderSortIcon('nextRun')}</th>
-                                <th style={{cursor:"auto"}}></th>
+                                <th
+                                    style={{
+                                        cursor: "auto"
+                                    }}></th>
                             </tr>
                         </thead>
                         <tbody className="table-body">
@@ -491,7 +513,11 @@ function App() {
                                                 }
                                             </td>
                                             <td>
-                                                {job.status && job.nextRun ? new Date(job.nextRun).toLocaleString() : "N/A"}
+                                                {
+                                                    job.status && job.nextRun
+                                                        ? new Date(job.nextRun).toLocaleString()
+                                                        : "N/A"
+                                                }
                                             </td>
 
                                             <td className="actions">
@@ -502,8 +528,13 @@ function App() {
                                                     <button className="edit-btn" onClick={() => handleEdit(job.job_id)}>
                                                         <img src={editIcon} alt="edit icon" className="edit-icon"/>
                                                     </button>
-                                                    <button className="delete-btn" onClick={() => { openConfirmDialog(); setJobToDelete({ job_id: job.job_id, name: job.name }); }}>
-                                                        <img src={deleteIcon} alt="delete icon" className="delete-icon" />
+                                                    <button
+                                                        className="delete-btn"
+                                                        onClick={() => {
+                                                            openConfirmDialog();
+                                                            setJobToDelete({job_id: job.job_id, name: job.name});
+                                                        }}>
+                                                        <img src={deleteIcon} alt="delete icon" className="delete-icon"/>
                                                     </button>
                                                 </div>
                                             </td>
@@ -536,31 +567,34 @@ function App() {
             <div className="App-footer">
                 <p>Batch Scheduler by Fishi</p>
             </div>
-            {showConfirmDialog && (
-  <div className="confirmation-dialog">
-    
-    <div className="confirmation-dialog-content">
-    <button className="close-confirmation-dialog-button"
-                    style={{
-                    }}
-                    onClick={() => setShowConfirmDialog(false)}><MdClose/></button>
-      <p>Are you sure you want to delete this job?</p>
-      {jobToDelete && (
-        <>
-            <p className="delete-info">
-                Job ID: <span className="delete-info-label">{jobToDelete.job_id}</span>
-            </p>
-            <p className="delete-info">
-                Job Name: <span className="delete-info-label">{jobToDelete.name}</span>
-            </p>
-        </>
-        )}
-      <div className="confirmation-dialog-buttons">
-        <button className="confirm-delete-button" onClick={() => handleDelete(jobToDelete)}>Delete job</button>
-      </div>
-    </div>
-  </div>
-)}
+            {
+                showConfirmDialog && (
+                    <div className="confirmation-dialog">
+
+                        <div className="confirmation-dialog-content">
+                            <button
+                                className="close-confirmation-dialog-button"
+                                style={{}}
+                                onClick={() => setShowConfirmDialog(false)}><MdClose/></button>
+                            <p>Are you sure you want to delete this job?</p>
+                            {
+                                jobToDelete && (
+                                    <> < p className = "delete-info" > Job ID : <span className="delete-info-label">{jobToDelete.job_id}</span>
+                                </p>
+                                <p className="delete-info">Job Name : <span className="delete-info-label">{jobToDelete.name}</span>
+                                </p>
+                            </>
+                                )
+                            }
+                            <div className="confirmation-dialog-buttons">
+                                <button
+                                    className="confirm-delete-button"
+                                    onClick={() => handleDelete(jobToDelete)}>Delete job</button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
 
         </div>
     );
