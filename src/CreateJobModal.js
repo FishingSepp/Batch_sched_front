@@ -30,7 +30,7 @@ const CreateJobModal = ({isOpen, closeModal}) => {
             description: jobDescription,
             start_date: periodBegin,
             end_date: periodEnd,
-            status: enabled,
+            status: enabled, //job always enabled on creation!
             cronExpression: `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`
         };
         fetch("http://localhost:8080/job", {
