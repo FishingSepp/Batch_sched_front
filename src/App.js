@@ -78,31 +78,20 @@ function App() {
 
                 //filter all fetched jobs
                 const filtered = data
-                    .filter((job) => {
-                        if (statusFilter.includes("All")) {
-                            return true;
-                        } else {
-                            return statusFilter.includes(
-                                job.status
-                                    ? "Enabled"
-                                    : "Disabled"
-                            );
-                        }
-                    })
+                .filter((job) => {
+                    if (statusFilter.includes("All")) {
+                        return true;
+                    }
+                    return statusFilter.includes(job.status ? "Enabled" : "Disabled");
+                })
                     .filter((job) => {
                         if (searchTermName) {
-                            return job
-                                .name
-                                .toLowerCase()
-                                .includes(searchTermName.toLowerCase());
-                        } else if (searchTermId) {
-                            return job
-                                .job_id
-                                .toString()
-                                .includes(searchTermId);
-                        } else {
-                            return true;
+                            return job.name.toLowerCase().includes(searchTermName.toLowerCase());
                         }
+                        if (searchTermId) {
+                            return job.job_id.toString().includes(searchTermId);
+                        }
+                        return true;
                     });
 
                 const withLastRunsAndStatus = await Promise.all(filtered.map(async (job) => {

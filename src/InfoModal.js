@@ -22,20 +22,14 @@ const InfoModal = ({isOpen, closeModal, jobId}) => {
     const [expandedOutput, setExpandedOutput] = useState(null);
     
     const abbreviateText = (text, maxLength = 50) => {
-        if (text.length <= maxLength) {
-            return text;
-        } else {
-            return text.substring(0, maxLength) + "...";
-        }
-    };
+      return text.length <= maxLength ? text : text.substring(0, maxLength) + "...";
+  };
+  
     
-    const handleOutputClick = (index) => {
-        if (index === expandedOutput) {
-            setExpandedOutput(null); 
-        } else {
-            setExpandedOutput(index);
-        }
-    };    
+  const handleOutputClick = (index) => {
+    setExpandedOutput(index === expandedOutput ? null : index);
+  };
+
 
     useEffect(() => {
         if (isOpen) {
@@ -68,11 +62,8 @@ const InfoModal = ({isOpen, closeModal, jobId}) => {
               setEnabled(data.status);
               setCronExpression(data.cronExpression);
       
-              if (data.cronExpression) {
-                setHumanReadable('"' + cronstrue.toString(data.cronExpression) + '"');
-              } else {
-                setHumanReadable('');
-              }
+              setHumanReadable(data.cronExpression ? '"' + cronstrue.toString(data.cronExpression) + '"' : '');
+
       
               // fetch exec for job
               fetch(`http://localhost:8080/execution/${jobId}`)
