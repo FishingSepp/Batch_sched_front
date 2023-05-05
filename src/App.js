@@ -1,10 +1,8 @@
 import React, {useState, useEffect} from "react";
 import './App.css';
-import Modal from "react-modal";
 import JobModal from "./JobModal";
 import InfoModal from "./InfoModal";
 import cron from 'cron';
-import cronstrue from 'cronstrue';
 import cronParser from 'cron-parser';
 import {MdClose} from 'react-icons/md';
 import createIcon from './icons/create-icon.png';
@@ -21,6 +19,9 @@ import sortIcon from './icons/sort.png';
 
 const {CronJob} = cron;
 
+// Dein App file ist viel zu voll gecluttered, der soll eigentlich nur die ganzen verschiedenen react components die du hast einbinden
+// (ich hab dir unten markiert wo du neue components anlegen solltest)
+// generelle regel ==> App.js file über 100 zeilen = schlecht
 function App() {
     const [jobs, setJobs] = useState([]);
     const [jobId, setJobId] = useState(null);
@@ -370,6 +371,7 @@ function App() {
                 <h1>Batch Scheduler</h1>
             </header>
             <div className="App-container">
+                <!-- eigene componente>
                 <div className="App-options">
                     <div className="btn-container">
                         <button className="create-btn" onClick={handleCreate}>
@@ -449,6 +451,7 @@ function App() {
                         </div>
                     </div>
                 </div>
+                <!-- eigene componente-->
                 <div className="App-list">
                     <table>
                         <thead>
@@ -553,6 +556,7 @@ function App() {
                     jobId={jobId}/>
 
             </div>
+            <!-- eigene componente => Footer.js-->
             <div className="App-footer">
                 <p>Batch Scheduler by Fishi</p>
             </div>
