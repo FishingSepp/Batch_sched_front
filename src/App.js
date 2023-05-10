@@ -19,10 +19,11 @@ import sortIcon from './icons/sort.png';
 
 const {CronJob} = cron;
 
-// Dein App file ist viel zu voll gecluttered, der soll eigentlich nur die ganzen verschiedenen react components die du hast einbinden
+// ❌ Dein App file ist viel zu voll gecluttered, der soll eigentlich nur die ganzen verschiedenen react components die du hast einbinden
 // (ich hab dir unten markiert wo du neue components anlegen solltest)
 // generelle regel ==> App.js file über 100 zeilen = schlecht
 function App() {
+    // ✅ state am anfang vom file definiert, sehr gut 
     const [jobs, setJobs] = useState([]);
     const [jobId, setJobId] = useState(null);
     const [filteredJobs, setFilteredJobs] = useState([]);
@@ -42,6 +43,7 @@ function App() {
     const fetchLatestEndTimeAndStatus = async (jobId) => {
         try {
             const response = await fetch(`http://localhost:8080/execution/${jobId}`);
+            // ❌ dieser if block ist überflüssig, das selbe ereignis wird schon gecatched
             if (!response.ok) {
                 if (response.status !== 404) {
                     console.error(
@@ -69,6 +71,7 @@ function App() {
         }
     };
 
+    // ✅ super wie du dein code kommentierst
     // fetch jobs again after changes currently triggering 3 times when initial
     // load.. expecting error with refreshCounter but couldnt pin it down
     useEffect(() => {
@@ -177,6 +180,7 @@ function App() {
         return null;
     };
 
+    // ❌ wieso so kompliziert? asc als boolean variabel und dann funktion: toggleAsc {setAsc(!asc)}
     // set sort config asc or desc
     const sortBy = (key) => {
         let direction = 'asc';
@@ -243,6 +247,7 @@ function App() {
         5: status5Icon
     };
 
+    // ❌ wieso bei beiden funktionen drei setState() aufrufe? gibt bestimmt eine schönere lösung.
     const handleSearchName = (event) => {
         const value = event.target.value;
         setSearchTermName(value);
@@ -305,6 +310,7 @@ function App() {
         setJobId(jobId);
     }
 
+    // ❌ funktion definition overkill, du rufst nur setState auf
     const closeInfo = () => {
         setInfoModalIsOpen(false);
     };

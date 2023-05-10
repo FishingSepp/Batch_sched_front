@@ -1,5 +1,7 @@
 const API_BASE_URL = "http://localhost:8080";
 
+// 🛑 ACHTUNG, MECKERN AUF HOHEM NIVEAU: du hast in deiner App.js damit angefangen await syntax für async code zu benutzen
+// einheitlich entweder .then() oder await zu benutzen wäre schöner
 export function getAllJobs() {
   return fetch(`${API_BASE_URL}/job`)
     .then((response) => {
