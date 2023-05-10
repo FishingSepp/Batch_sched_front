@@ -6,7 +6,9 @@ import "react-datepicker/dist/react-datepicker.css";
 import cronParser from 'cron-parser';
 import cronstrue from 'cronstrue';
 
+// ✅✅ props ordentlich übergeben
 const CreateJobModal = ({isOpen, closeModal}) => {
+    // ✅ state oben schön
     const [jobName, setJobName] = useState("");
     const [jobDescription, setJobDescription] = useState("");
     const [periodBegin, setPeriodBegin] = useState(null);
@@ -33,6 +35,7 @@ const CreateJobModal = ({isOpen, closeModal}) => {
             status: enabled, //job always enabled on creation!
             cronExpression: `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`
         };
+        // 🛑 hier auch wieder .then() ==> (SIEHE ANMERKUNG IN /service/api.js)
         fetch("http://localhost:8080/job", {
             method: "POST",
             headers: {
@@ -48,6 +51,7 @@ const CreateJobModal = ({isOpen, closeModal}) => {
             .catch((error) => console.error("Error creating job:", error));
     };
 
+    // nicht gerade schön, habe aber selber keine besser lösung finden können
     const clearInputFields = () => {
         setJobName("");
         setJobDescription("");
@@ -103,8 +107,10 @@ const CreateJobModal = ({isOpen, closeModal}) => {
 
     useEffect(() => {
         const isValid = (
+            // ❌ prüfst du diese ganzen felder nicht schon in deiner generateCronExpression function??
             jobName !== "" && jobDescription !== "" && periodBegin !== null && seconds !== "" && minutes !== "" && hours !== "" && dayOfMonth !== "" && month !== "" && dayOfWeek !== "" && generateCronExpression() !== 'Invalid cron expression'
         );
+        // raus mit de console.logs 
         console.log(isValid)
         setIsValid(isValid);
     }, [
