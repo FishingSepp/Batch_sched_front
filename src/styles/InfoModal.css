@@ -8,7 +8,6 @@
     height: 70% !important;
     max-height: 720px !important;
   }
-  
 
   h1 {
     margin-top: 0;
@@ -91,8 +90,6 @@
     margin-right: -10px;
   }
   
-  
-  
   .info-container label {
     margin-bottom: 10px;
   }
@@ -103,7 +100,6 @@
     justify-content: flex-start;
     align-items: flex-start;
   }
-  
   
   .info-container input[type="text"],
   .info-container select {
