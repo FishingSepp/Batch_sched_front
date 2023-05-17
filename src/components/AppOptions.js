@@ -55,7 +55,7 @@ const AppOptions = ({
             alt="refresh icon"
             className="refresh-icon"
             style={{
-              transform: `rotate(${rotationDegrees}deg)`,
+              transform: `rotate(${-rotationDegrees}deg)`,
               transition: "transform 0.5s",
             }}
           />

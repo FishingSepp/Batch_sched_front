@@ -50,15 +50,15 @@ const InfoModal = ({ isOpen, jobId, setInfoModalIsOpen }) => {
         .then((response) => response.json())
         .then((data) => {
           setJob(data);
-          console.log(data);
+          //console.log(data);
           setJobName(data.name);
           setJobDescription(data.description || "");
-          setJobScript(data.job_script || "");
+          setJobScript(data.command || "");
           setPeriodBegin(
-            data.start_date ? new Date(Date.parse(data.start_date)) : null
+            data.startDate ? new Date(Date.parse(data.startDate)) : null
           );
           setPeriodEnd(
-            data.end_date ? new Date(Date.parse(data.end_date)) : null
+            data.endDate ? new Date(Date.parse(data.endDate)) : null
           );
           setEnabled(data.status);
           setCronExpression(data.cronExpression);
@@ -81,13 +81,13 @@ const InfoModal = ({ isOpen, jobId, setInfoModalIsOpen }) => {
         })
         .catch((error) => console.error("Error fetching job:", error));
     }
-  }, [isModalOpen, jobId]);
+  }, [isModalOpen, jobId, isOpen]);
 
   const fetchExecutions = (jobId) => {
     fetch(`http://localhost:8080/execution/${jobId}`)
       .then((response) => response.json())
       .then((data) => {
-        console.log(data);
+        //console.log(data);
         setExecutions(data);
       })
       .catch((error) => console.error("Error fetching executions:", error));
@@ -140,7 +140,14 @@ const InfoModal = ({ isOpen, jobId, setInfoModalIsOpen }) => {
           <div className="name-container">
             <label htmlFor="jobName">Name:</label>
             <br />
-            <span id="jobName">{jobName ? jobName : "N/A"}</span>
+            <span
+              id="jobName"
+              style={{
+                height: "63px",
+              }}
+            >
+              {jobName ? jobName : "N/A"}
+            </span>
           </div>
           <div className="descr-container">
             <label htmlFor="jobDescription">Description:</label>
@@ -206,11 +213,14 @@ const InfoModal = ({ isOpen, jobId, setInfoModalIsOpen }) => {
             <tbody className="history-body">
               {executions.length > 0 ? (
                 executions
-                  .sort((a, b) => new Date(b.end_time) - new Date(a.end_time))
+                  .sort((a, b) => new Date(b.endTime) - new Date(a.endTime))
                   .slice(0, 10)
                   .map((execution) => (
-                    <React.Fragment key={execution.execution_id}>
-                      <tr>
+                    <React.Fragment key={execution.id}>
+                      <tr
+                        className="output-td"
+                        onClick={() => handleOutputClick(execution.id)}
+                      >
                         <td
                           style={{
                             textAlign: "center",
@@ -222,33 +232,28 @@ const InfoModal = ({ isOpen, jobId, setInfoModalIsOpen }) => {
                             <img src={failIcon} alt="Fail" />
                           )}
                         </td>
-                        <td>{new Date(execution.end_time).toLocaleString()}</td>
+                        <td>{new Date(execution.endTime).toLocaleString()}</td>
                         <td>
-                          {execution.start_time && execution.end_time
+                          {execution.startTime && execution.endTime
                             ? (
-                                (new Date(execution.end_time) -
-                                  new Date(execution.start_time)) /
+                                (new Date(execution.endTime) -
+                                  new Date(execution.startTime)) /
                                 1000
                               ).toFixed(0) + " s"
                             : "N/A"}
                         </td>
-                        <td
-                          className="output-td"
-                          onClick={() =>
-                            handleOutputClick(execution.execution_id)
-                          }
-                        >
+                        <td>
                           {abbreviateText(
                             execution.output ? execution.output : "N/A",
                             25
                           )}
                         </td>
                       </tr>
-                      {expandedOutput === execution.execution_id && (
-                        <tr>
+                      {expandedOutput === execution.id && (
+                        <tr className="no-highlight">
                           <td colSpan={4}>
                             <div className="output-expanded">
-                              <pre>Exit code: {execution.exit_code}</pre>
+                              <pre>Exit code: {execution.exitCode}</pre>
                               <pre>{execution.output}</pre>
                             </div>
                           </td>
@@ -257,7 +262,7 @@ const InfoModal = ({ isOpen, jobId, setInfoModalIsOpen }) => {
                     </React.Fragment>
                   ))
               ) : (
-                <tr>
+                <tr className="no-highlight">
                   <td colSpan={4}>No executions stored or available</td>
                 </tr>
               )}

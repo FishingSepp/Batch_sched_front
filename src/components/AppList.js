@@ -32,7 +32,7 @@ const AppList = ({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [sortConfig, setSortConfig] = useState({
-    key: "job_id",
+    key: "id",
     direction: "asc",
   });
 
@@ -55,8 +55,8 @@ const AppList = ({
   }, [JobModalIsOpen]);
 
   // get last exec and stat of job by id
-  const fetchLatestEndTimeAndStatus = (jobId) => {
-    return fetch(`http://localhost:8080/execution/${jobId}`)
+  const fetchLatestEndTimeAndStatus = (id) => {
+    return fetch(`http://localhost:8080/execution/${id}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -68,7 +68,7 @@ const AppList = ({
           return { lastRun: null, status: null };
         }
         const latestEndTime = executions.reduce((latest, execution) => {
-          const endTime = new Date(execution.end_time);
+          const endTime = new Date(execution.endTime);
           return endTime > latest ? endTime : latest;
         }, new Date(0));
 
@@ -76,7 +76,7 @@ const AppList = ({
         return { lastRun: latestEndTime, executionStatus };
       })
       .catch((error) => {
-        console.error(`Error fetching executions for job ${jobId}:`, error);
+        console.error(`Error fetching executions for job ${id}:`, error);
         return { lastRun: null, status: null };
       });
   };
@@ -103,14 +103,14 @@ const AppList = ({
                   .includes(searchTermName.toLowerCase());
               }
               if (searchTermId) {
-                return job.job_id.toString().includes(searchTermId);
+                return job.id.toString().includes(searchTermId);
               }
               return true;
             });
 
           return Promise.all(
             filtered.map((job) => {
-              return fetchLatestEndTimeAndStatus(job.job_id).then(
+              return fetchLatestEndTimeAndStatus(job.id).then(
                 ({ lastRun, executionStatus }) => {
                   if (job.status) {
                     return calculateRunTimes(job).then(({ nextRun }) => {
@@ -152,23 +152,17 @@ const AppList = ({
   // enable/disable seperated to not send complete job like in jobmodal only for
   // status
   const handleStatusToggle = (jobId, currentStatus) => {
-    console.log(
-      "Toggling status for jobId:",
-      jobId,
-      "currentStatus:",
-      currentStatus
-    );
     const newStatus = !currentStatus;
     fetch(`http://localhost:8080/job/${jobId}/status`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ status: newStatus }),
+      body: JSON.stringify(newStatus),
     })
       .then((response) => {
         if (response.ok) {
-          console.log("Status updated successfully");
+          //console.log("Status updated successfully");
           setRefreshCounter((prevCounter) => prevCounter + 1);
         } else {
           console.error(
@@ -260,7 +254,7 @@ const AppList = ({
   // delete job by id
   function handleDelete(jobToDelete) {
     setShowConfirmDialog(false);
-    const url = `http://localhost:8080/job/${jobToDelete.job_id}`;
+    const url = `http://localhost:8080/job/${jobToDelete.id}`;
     fetch(url, { method: "DELETE" })
       .then((response) => {
         if (response.ok) {
@@ -284,8 +278,7 @@ const AppList = ({
 
   //run time with nextrun in fut
   function calculateRunTimes(job) {
-    const { start_date, cronExpression } = job;
-
+    const { startDate, cronExpression } = job;
     const options = {
       currentDate: new Date(),
       tz: "UTC",
@@ -295,22 +288,30 @@ const AppList = ({
       .parseExpression(cronExpression, options)
       .next()
       .toDate();
-
-    if (nextRun >= new Date(start_date)) {
-      return { nextRun: nextRun.toISOString() };
+    if (nextRun >= new Date(startDate)) {
+      return Promise.resolve({ nextRun: nextRun.toISOString() });
     }
 
-    options.currentDate = new Date(start_date);
+    options.currentDate = new Date(startDate);
     const nextValidRun = cronParser
       .parseExpression(cronExpression, options)
       .next()
       .toDate();
 
-    return { nextRun: nextValidRun.toISOString() };
+    return Promise.resolve({ nextRun: nextValidRun.toISOString() });
   }
 
   function openConfirmDialog() {
     setShowConfirmDialog(true);
+  }
+
+  // limit size of name field in applist. limited to oneline with 24, limited to 2 lines with 50 for example
+  function trimName(name, maxLength) {
+    if (name.length > maxLength) {
+      return name.substring(0, maxLength) + "...";
+    } else {
+      return name;
+    }
   }
 
   useEffect(() => {
@@ -334,9 +335,7 @@ const AppList = ({
       <table>
         <thead>
           <tr className="table-headers">
-            <th onClick={() => sortBy("job_id")}>
-              ID {renderSortIcon("job_id")}
-            </th>
+            <th onClick={() => sortBy("id")}>ID {renderSortIcon("id")}</th>
             <th onClick={() => sortBy("name")}>
               Name {renderSortIcon("name")}
             </th>
@@ -354,10 +353,10 @@ const AppList = ({
         </thead>
         <tbody className="table-body">
           {sortedJobs.map((job) => (
-            <React.Fragment key={job.job_id}>
-              <tr onDoubleClick={() => handleInfo(job.job_id)}>
-                <td>{job.job_id}</td>
-                <td>{job.name}</td>
+            <React.Fragment key={job.id}>
+              <tr onDoubleClick={() => handleInfo(job.id)}>
+                <td>{job.id}</td>
+                <td>{trimName(job.name, 24)}</td>
                 <td>
                   <span
                     className="status-text"
@@ -365,7 +364,7 @@ const AppList = ({
                       textDecoration: "underline",
                       cursor: "pointer",
                     }}
-                    onClick={() => handleStatusToggle(job.job_id, job.status)}
+                    onClick={() => handleStatusToggle(job.id, job.status)}
                   >
                     {job.status ? "Enabled" : "Disabled"}
                   </span>
@@ -394,7 +393,7 @@ const AppList = ({
                   <div className="button-container">
                     <button
                       className="info-btn"
-                      onClick={() => handleInfo(job.job_id)}
+                      onClick={() => handleInfo(job.id)}
                     >
                       <img
                         src={infoIcon}
@@ -404,7 +403,7 @@ const AppList = ({
                     </button>
                     <button
                       className="edit-btn"
-                      onClick={() => handleEdit(job.job_id)}
+                      onClick={() => handleEdit(job.id)}
                     >
                       <img
                         src={editIcon}
@@ -416,7 +415,7 @@ const AppList = ({
                       className="delete-btn"
                       onClick={() => {
                         openConfirmDialog();
-                        setJobToDelete({ job_id: job.job_id, name: job.name });
+                        setJobToDelete({ id: job.id, name: job.name });
                       }}
                     >
                       <img
@@ -450,9 +449,7 @@ const AppList = ({
                 <p className="delete-info">
                   {" "}
                   Job ID :{" "}
-                  <span className="delete-info-label">
-                    {jobToDelete.job_id}
-                  </span>
+                  <span className="delete-info-label">{jobToDelete.id}</span>
                 </p>
                 <p className="delete-info">
                   Job Name :{" "}

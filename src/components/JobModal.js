@@ -53,12 +53,14 @@ const JobModal = ({ isOpen, isEditing, jobId, setJobModalIsOpen }) => {
     //when in creation mode -> post request
     event.preventDefault();
     if (!isEditing) {
+      let trimmedJobScript = jobScript.trim();
+      if (trimmedJobScript === "") trimmedJobScript = null;
       const jobData = {
         name: jobName,
         description: jobDescription,
-        job_script: jobScript,
-        start_date: periodBegin,
-        end_date: periodEnd,
+        command: trimmedJobScript,
+        startDate: periodBegin,
+        endDate: periodEnd,
         status: enabled,
         cronExpression: `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`,
       };
@@ -71,7 +73,7 @@ const JobModal = ({ isOpen, isEditing, jobId, setJobModalIsOpen }) => {
       })
         .then((response) => response.json())
         .then((data) => {
-          console.log(data);
+          //console.log(data);
           closeModal();
         })
         .catch((error) => console.error("Error creating job:", error));
@@ -80,12 +82,14 @@ const JobModal = ({ isOpen, isEditing, jobId, setJobModalIsOpen }) => {
     //when in edit mode -> put request
     if (isEditing) {
       setShowConfirmDialog(false);
+      let trimmedJobScript = jobScript.trim();
+      if (trimmedJobScript === "") trimmedJobScript = null;
       const jobData = {
         name: jobName,
         description: jobDescription,
-        job_script: jobScript,
-        start_date: periodBegin,
-        end_date: periodEnd,
+        command: trimmedJobScript,
+        startDate: periodBegin,
+        endDate: periodEnd,
         status: enabled,
         cronExpression: `${seconds} ${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`,
       };
@@ -98,28 +102,43 @@ const JobModal = ({ isOpen, isEditing, jobId, setJobModalIsOpen }) => {
       })
         .then((response) => response.json())
         .then((data) => {
-          console.log(data);
+          //console.log(data);
           closeModal();
         })
         .catch((error) => console.error("Error creating job:", error));
 
-      // delete executions of old job by id
-      const url = `http://localhost:8080/execution/job/${jobId}`;
-      fetch(url, { method: "DELETE" })
-        .then((response) => {
-          if (response.ok) {
-            fetch("http://localhost:8080/execution")
-              .then((response) => response.json())
-              .catch((error) => console.error("Error fetching jobs:", error));
-          } else {
-            console.error(
-              `Error deleting executions of job with id ${jobId}: ${response.statusText}`
-            );
+      // check for executions of job
+      fetch(`http://localhost:8080/execution/${jobId}`)
+        .then((response) => response.json())
+        .then((executions) => {
+          if (executions.length > 0) {
+            // delete executions of old job by id
+            const url = `http://localhost:8080/execution/job/${jobId}`;
+            fetch(url, { method: "DELETE" })
+              .then((response) => {
+                if (response.ok) {
+                  fetch("http://localhost:8080/execution")
+                    .then((response) => response.json())
+                    .catch((error) =>
+                      console.error("Error fetching jobs:", error)
+                    );
+                } else {
+                  console.error(
+                    `Error deleting executions of job with id ${jobId}: ${response.statusText}`
+                  );
+                }
+              })
+              .catch((error) =>
+                console.error(
+                  `Error deleting executions of job with id ${jobId}: ${error}`
+                )
+              );
           }
         })
         .catch((error) =>
           console.error(
-            `Error deleting executions of job with id ${jobId}: ${error}`
+            `Error fetching executions for job with id ${jobId}:`,
+            error
           )
         );
     }
@@ -132,15 +151,15 @@ const JobModal = ({ isOpen, isEditing, jobId, setJobModalIsOpen }) => {
         .then((data) => {
           setOriginalJob(data);
           setJob(data);
-          console.log(data);
+          //console.log(data);
           setJobName(data.name);
           setJobDescription(data.description || "");
-          setJobScript(data.job_script || "");
+          setJobScript(data.command || "");
           setPeriodBegin(
-            data.start_date ? new Date(Date.parse(data.start_date)) : null
+            data.startDate ? new Date(Date.parse(data.startDate)) : null
           );
           setPeriodEnd(
-            data.end_date ? new Date(Date.parse(data.end_date)) : null
+            data.endDate ? new Date(Date.parse(data.endDate)) : null
           );
 
           setEnabled(data.status);
@@ -166,16 +185,16 @@ const JobModal = ({ isOpen, isEditing, jobId, setJobModalIsOpen }) => {
     if (!originalJob) {
       return false;
     }
-    // add job_script in fut
     return (
+      originalJob.command !== jobScript ||
       originalJob.name !== jobName ||
       originalJob.description !== jobDescription ||
-      (originalJob.start_date
-        ? new Date(Date.parse(originalJob.start_date)).toISOString() !==
+      (originalJob.startDate
+        ? new Date(Date.parse(originalJob.startDate)).toISOString() !==
           periodBegin?.toISOString()
         : periodBegin) ||
-      (originalJob.end_date
-        ? new Date(Date.parse(originalJob.end_date)).toISOString() !==
+      (originalJob.endDate
+        ? new Date(Date.parse(originalJob.endDate)).toISOString() !==
           periodEnd?.toISOString()
         : periodEnd) ||
       originalJob.status !== enabled ||
@@ -203,7 +222,7 @@ const JobModal = ({ isOpen, isEditing, jobId, setJobModalIsOpen }) => {
     }
   }, [cronExpression]);
 
-  //add job_script as requi for isValid later on
+  //add job_script/command as requi for isValid later on
   useEffect(() => {
     const isValid =
       jobName !== "" &&
@@ -335,9 +354,9 @@ const JobModal = ({ isOpen, isEditing, jobId, setJobModalIsOpen }) => {
                 type="text"
                 id="jobName"
                 value={jobName}
-                maxLength={50}
+                maxLength={100}
                 onChange={(e) =>
-                  e.target.value.length <= 50 && setJobName(e.target.value)
+                  e.target.value.length <= 100 && setJobName(e.target.value)
                 }
               />
             </div>
@@ -347,9 +366,9 @@ const JobModal = ({ isOpen, isEditing, jobId, setJobModalIsOpen }) => {
               <textarea
                 id="jobDescription"
                 value={jobDescription}
-                maxLength={200}
+                maxLength={1000}
                 onChange={(e) =>
-                  e.target.value.length <= 200 &&
+                  e.target.value.length <= 1000 &&
                   setJobDescription(e.target.value)
                 }
                 rows="4"
@@ -364,8 +383,8 @@ const JobModal = ({ isOpen, isEditing, jobId, setJobModalIsOpen }) => {
                 showTimeInput="showTimeInput"
                 timeInputLabel="Time:"
                 dateFormat="MMMM d, yyyy HH:mm"
-                minDate={new Date(Date.now())}
                 // only dates in future
+                minDate={new Date(Date.now())}
               />
               <br />
               <label htmlFor="periodEnd">Period End:</label>

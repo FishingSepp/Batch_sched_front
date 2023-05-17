@@ -38,6 +38,14 @@
     justify-content: space-between;
   }
 
+  .history-body tr:not(.no-highlight):hover {
+    background-color: #424957;
+  }
+
+  .history-body tr {
+    transition: background-color 0.3s ease;
+  }
+
   .history-container {
     width: 55%;
     height: 100%;
@@ -67,6 +75,11 @@
     cursor: pointer;
   }
   
+  .output-expanded {
+    max-height: 250px;
+    overflow-y: auto;
+  }  
+
   .output-expanded pre {
     max-width: 450px;
     white-space: pre-wrap;

@@ -16,6 +16,7 @@
   }
   
   .table-headers th {
+    position: relative;
     cursor: pointer;
   }
   
@@ -74,7 +75,6 @@
   }
   
   .status-img {
-    vertical-align: middle;
     width: 15px;
     height: 15px;
     filter: invert(1);
