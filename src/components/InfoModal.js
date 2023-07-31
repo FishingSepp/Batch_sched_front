@@ -101,6 +101,7 @@ const InfoModal = ({ isOpen, jobId, setInfoModalIsOpen }) => {
       style={{
         overlay: {
           backgroundColor: "rgba(44, 49, 58, 0.75)",
+          zIndex: 5,
         },
         content: {
           display: "flex",

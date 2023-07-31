@@ -149,8 +149,7 @@ const AppList = ({
     return () => clearInterval(interval);
   }, [statusFilter, searchTermName, searchTermId, refreshCounter]);
 
-  // enable/disable seperated to not send complete job like in jobmodal only for
-  // status
+  // enable/disable seperated to not send complete job like in jobmodal only for status
   const handleStatusToggle = (jobId, currentStatus) => {
     const newStatus = !currentStatus;
     fetch(`http://localhost:8080/job/${jobId}/status`, {
@@ -195,7 +194,14 @@ const AppList = ({
   };
 
   // set sort config asc or desc
-  //sort without boolean because with extra state etc I ran into asynch sorting problems
+  // sort without boolean because with extra state etc I ran into asynch sorting problems
+  //const sortBy = (key) => {
+  //if (sortConfig.key === key) {
+  //  setAsc(!asc);
+  //}
+  //setSortConfig({ key, direction: asc ? 'asc' : 'desc' });
+  //};
+  // seems like setAsc(!asc) wouldnt be immediately changing asc, so first clicks on sort dont work
   const sortBy = (key) => {
     let direction = "asc";
 
