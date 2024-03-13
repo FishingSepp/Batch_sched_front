@@ -222,7 +222,7 @@ const JobModal = ({ isOpen, isEditing, jobId, setJobModalIsOpen }) => {
     }
   }, [cronExpression]);
 
-  //add job_script/command as requi for isValid later on
+  // maybe TODO: add job_script/command as requi for isValid later on
   useEffect(() => {
     const isValid =
       jobName !== "" &&
